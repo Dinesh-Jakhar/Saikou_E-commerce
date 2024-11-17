@@ -1,0 +1,11 @@
+node_modules
+
+.env
+.vscode
+
+package-lock.json
+yarn.lock
+bun.lockb
+
+.DS_Store
+testing.js
