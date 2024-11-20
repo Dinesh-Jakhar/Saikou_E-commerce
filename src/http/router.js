@@ -23,6 +23,9 @@ module.exports = () => {
     .use(bodyParserErrorHandler())
   // will load routes automatically
   moduleNames.forEach((module) => {
+    //   const routePath = path.join(__dirname, ROUTES_PATH, module, '/routes.js');
+    // console.log(`Loading route from: ${routePath}`);
+    // apiRouter.use(loadControllers(routePath));
     apiRouter.use(
       loadControllers(path.join(__dirname, ROUTES_PATH, module, '/routes.js'))
     )
