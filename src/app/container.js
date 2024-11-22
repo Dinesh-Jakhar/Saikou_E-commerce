@@ -9,6 +9,7 @@ const {
   Sequelize,
 } = require('../infra/database/database')
 const path = require('node:path')
+const emailService = require('./config/emailService')
 const logger = require('./logger/logger')
 const asyncErrorHandler = require('../middlewares/error_handler/async_errors')
 const CustomError = require('../middlewares/error_handler/CustomError')
@@ -35,6 +36,7 @@ container.register({
   asyncErrorHandler: asValue(asyncErrorHandler),
   CustomError: asValue(CustomError),
   ERRORS: asValue(ERRORS),
+  emailService: asValue(emailService),
   constants: asValue(constants),
   HTTP_ERRORS: asValue(HTTP_ERROR),
   fs: asValue(fs),

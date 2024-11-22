@@ -12,7 +12,7 @@ const registrationRepository = ({
       throw error
     }
   },
-  createAccount: async (firstName, lastName, email) => {
+  createAccount: async (firstName, lastName, email, hashedPassword) => {
     try {
       const userModel = await writerDatabase('User')
       const accountData = await userModel.create({
@@ -21,6 +21,7 @@ const registrationRepository = ({
         email,
         role: 'user',
         emailVerified: false,
+        password: hashedPassword,
       })
       return accountData
     } catch (error) {

@@ -24,9 +24,9 @@ const ERRORS = {
     message: 'Already exists',
     errors: 'Account already exists',
   },
-  ACCOUNT_EXISTED_EARLIER: {
+  EMAIL_NOT_VERIFIED: {
     statusCode: 400,
-    message: 'This Account existed earlier but deleted',
+    message: 'This email is not verified',
     errors: '',
   },
   REQUESTED_ALREADY: {
