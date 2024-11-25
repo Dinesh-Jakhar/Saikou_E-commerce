@@ -5,6 +5,7 @@ const registrationRepository = ({
 }) => ({
   checkIfExists: async (email) => {
     try {
+      console.log(email)
       const userModel = await readerDatabase('User')
       const acc = await userModel.findOne({ where: { email } })
       return acc

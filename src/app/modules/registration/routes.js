@@ -14,5 +14,4 @@ const registration = createController(registration_controller)
   .post('/verify', 'verifyEmail', {
     before: [payloadValidationMiddleware(dto.verify)],
   })
-
 module.exports = registration

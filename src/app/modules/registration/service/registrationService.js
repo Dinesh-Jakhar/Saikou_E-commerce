@@ -10,6 +10,7 @@ const registrationService = ({
   configs,
 }) => ({
   checkIfExists: async (email) => {
+    console.log('1')
     return await registrationRepository.checkIfExists(email)
   },
   createAccount: async function (firstName, lastName, email, password) {

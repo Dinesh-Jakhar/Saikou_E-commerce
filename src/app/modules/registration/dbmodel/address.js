@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'users',
+          model: 'User',
           key: 'id',
         },
         //   onDelete: 'CASCADE',
@@ -56,7 +56,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'address',
+      tableName: 'Address',
     }
   )
 
