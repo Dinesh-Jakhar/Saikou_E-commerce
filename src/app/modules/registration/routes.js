@@ -11,7 +11,11 @@ const registration = createController(registration_controller)
   .post('/login', 'login', {
     before: [payloadValidationMiddleware(dto.login)],
   })
-  .post('/verify', 'verifyEmail', {
+  .post('/forgot-password', 'forgotPassword', {
     before: [payloadValidationMiddleware(dto.verify)],
   })
+  .post('/reset-password', 'resetPassword', {
+    before: [payloadValidationMiddleware(dto.resetPass)],
+  })
+
 module.exports = registration

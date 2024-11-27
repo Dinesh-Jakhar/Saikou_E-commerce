@@ -21,7 +21,7 @@ const mailSender = async (email, title, body) => {
   try {
     const transporter = createTransporter()
     const info = await transporter.sendMail({
-      from: `${process.env.MAIL_SENDER_NAME || 'No-Reply'} <${process.env.MAIL_USER}>`,
+      from: `${config.MAIL_SENDER_NAME || 'No-Reply'} <${config.MAIL_USER}>`,
       to: email,
       subject: title,
       html: body,

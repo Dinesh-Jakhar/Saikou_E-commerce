@@ -6,7 +6,7 @@ module.exports = ({ registrationService, logger, CustomError, ERRORS }) => ({
       if (ifExists) {
         return res.status(400).json({
           message: 'BAD REQUEST',
-          error: 'Email already Exists',
+          error: 'Email already Exists, Please Login',
         })
       }
       const createdAccount = await registrationService.createAccount(
@@ -16,9 +16,8 @@ module.exports = ({ registrationService, logger, CustomError, ERRORS }) => ({
         password
       )
       return res.status(201).json({
-        message:
-          'Account created successfully. Please verify your email by the otp sent on your mail',
-        account: createdAccount,
+        message: 'Account created successfully.',
+        createdAccount,
       })
     } catch (error) {
       logger.error('Error During Account Creation', error)
@@ -37,14 +36,27 @@ module.exports = ({ registrationService, logger, CustomError, ERRORS }) => ({
       return next(error)
     }
   },
-  verifyEmail: async (req, res, next) => {
+  forgotPassword: async (req, res, next) => {
     try {
-      const { email, otp } = req.body
-      const data = await registrationService.verifyEmail(email, otp)
+      const { email } = req.body
+      const data = await registrationService.forgotPassword(email)
       return res.status(200).json({
-        token: data.token,
-        account: data.account,
-        message: 'Email verified successfully',
+        message: 'Reset Link has been sent to your Email',
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
+  resetPassword: async (req, res, next) => {
+    try {
+      const { email, newPassword, token } = req.body
+      const updatePassword = await registrationService.resetPassword(
+        email,
+        newPassword,
+        token
+      )
+      return res.status(200).json({
+        message: 'Password was Successfully Updated',
       })
     } catch (error) {
       return next(error)

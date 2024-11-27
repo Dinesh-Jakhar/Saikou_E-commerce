@@ -44,7 +44,6 @@ const authorize = (roles = []) => {
 
       req.user.id = account.id
       req.user.role = userRole
-      req.user.isVerified = account.emailVerified
       next()
     } catch (error) {
       console.error(error)

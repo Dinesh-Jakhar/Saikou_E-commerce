@@ -52,4 +52,40 @@ module.exports = ({ productService, CustomError }) => ({
       return next(error)
     }
   },
+  updateProduct: async (req, res, next) => {
+    try {
+      const { id, name, desc, price, discountId, quantity } = req.body
+      const updatedProduct = await productService.updateProduct(
+        id,
+        name,
+        desc,
+        price,
+        discountId,
+        quantity
+      )
+      return res.status(201).json({
+        message: 'Updated Successfully',
+        count: updatedProduct,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
+  addDiscount: async (req, res, next) => {
+    try {
+      const { name, desc, discountPercent } = req.body
+      const createDiscount = await productService.createDiscount(
+        name,
+        desc,
+        discountPercent
+      )
+      return res.status(201).json({
+        message: 'Discount Created Successfully',
+        discountInfo: createDiscount,
+        errors: '',
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
 })

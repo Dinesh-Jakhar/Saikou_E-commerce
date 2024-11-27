@@ -11,6 +11,13 @@ const product = createController(product_controller)
   .get('/all', 'allProducts', {
     // before: [authenticateJWT],
   })
+  .post('/addDiscount', 'addDiscount', {
+    before: [
+      authenticateJWT,
+      authorize('admin'),
+      payloadValidationMiddleware(dto.addDiscount),
+    ],
+  })
   .post('/addNew', 'addNewProduct', {
     before: [
       authenticateJWT,
@@ -19,5 +26,12 @@ const product = createController(product_controller)
       payloadValidationMiddleware(dto.addProduct),
     ],
   })
+// .put('/update','updateProduct',{
+//   before:[
+//     authenticateJWT,
+//     authorize('admin'),
+//     payloadValidationMiddleware(dto.updateProduct),
+//   ]
+// })
 
 module.exports = product

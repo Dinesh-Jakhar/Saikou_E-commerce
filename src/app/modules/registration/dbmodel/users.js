@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM('admin', 'user'),
         allowNull: false,
       },
-      otp: {
+      resetToken: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -39,11 +39,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
-      emailVerified: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
-      },
+      // emailVerified: {
+      //   type: DataTypes.BOOLEAN,
+      //   defaultValue: false,
+      //   allowNull: false,
+      // },
       createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

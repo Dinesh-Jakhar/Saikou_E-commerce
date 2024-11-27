@@ -12,7 +12,11 @@ const login = joi.object({
 })
 const verify = joi.object({
   email: joi.string().email().required(),
-  otp: joi.string().required(),
 })
-const dto = { signup, login, verify }
+const resetPass = joi.object({
+  email: joi.string().email().required(),
+  newPassword: joi.string().required(),
+  token: joi.string().required(),
+})
+const dto = { signup, login, verify, resetPass }
 module.exports = dto

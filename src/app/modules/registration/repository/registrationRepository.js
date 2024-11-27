@@ -5,9 +5,17 @@ const registrationRepository = ({
 }) => ({
   checkIfExists: async (email) => {
     try {
-      console.log(email)
       const userModel = await readerDatabase('User')
       const acc = await userModel.findOne({ where: { email } })
+      return acc
+    } catch (error) {
+      throw error
+    }
+  },
+  checkIfExistsByID: async (id) => {
+    try {
+      const userModel = await readerDatabase('User')
+      const acc = await userModel.findOne({ where: { id } })
       return acc
     } catch (error) {
       throw error
