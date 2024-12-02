@@ -29,7 +29,6 @@ const productRepository = ({ writerDatabase, readerDatabase }) => ({
         where: { id: id },
         paranoid: true,
       })
-      console.log(myProd)
       return myProd
     } catch (error) {
       throw error
