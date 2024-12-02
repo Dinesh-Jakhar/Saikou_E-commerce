@@ -1,4 +1,40 @@
 const productRepository = ({ writerDatabase, readerDatabase }) => ({
+  getSingleProduct: async () => {
+    try {
+      const productModel = await readerDatabase('Product')
+      const inventoryModel = await readerDatabase('Inventory')
+      const discountModel = await readerDatabase('Discount')
+
+      const myProd = await productModel.findOne({
+        include: [
+          {
+            model: discountModel,
+            attributes: ['id', 'name', 'discount_percent', 'deleted_at'],
+            as: 'discounts',
+          },
+          {
+            model: inventoryModel,
+            attributes: ['quantity'],
+            as: 'inventory',
+          },
+        ],
+        attributes: [
+          'id',
+          'name',
+          'desc',
+          'price',
+          'deleted_at',
+          'imageUrls',
+          'created_at',
+        ],
+        where: { id: id },
+        paranoid: true,
+      })
+      return myProd
+    } catch (error) {
+      throw error
+    }
+  },
   allProducts: async () => {
     try {
       const productModel = await readerDatabase('Product')

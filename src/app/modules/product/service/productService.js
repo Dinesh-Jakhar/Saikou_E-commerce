@@ -5,10 +5,65 @@ const productService = ({
   ERRORS,
   configs,
 }) => ({
-  allProductsRoleWise: async () => {
+  allProductsRoleWise: async function () {
     const allProds = await productRepository.allProducts()
+    const enhancedProducts = await this.filterProducts(allProds)
+    console.log(enhancedProducts)
+    return enhancedProducts
 
-    const enhancedProducts = allProds.map((product) => {
+    // const enhancedProducts = allProds.map((product) => {
+    //   const { dataValues } = product
+
+    //   const discountPercent = dataValues.discounts
+    //     ? parseFloat(dataValues.discounts.dataValues.discount_percent)
+    //     : 0
+    //   const actualPrice =
+    //     parseFloat(dataValues.price) -
+    //     (parseFloat(dataValues.price) * discountPercent) / 100
+
+    //   const stockStatus =
+    //     dataValues.inventory.dataValues.quantity > 0
+    //       ? 'In Stock'
+    //       : 'Out of Stock'
+    //   const saleStatus = discountPercent > 0 ? 'Sale' : 'No Sale'
+
+    //   return {
+    //     name: dataValues.name,
+    //     // desc: dataValues.desc,
+    //     price: dataValues.price,
+    //     salePrice: actualPrice.toFixed(2),
+    //     stockStatus,
+    //     saleStatus,
+    //     imageUrls: dataValues.imageUrls,
+    //     created_at: dataValues.created_at,
+    //     discounts: dataValues.discounts,
+    //     inventory: dataValues.inventory,
+    //   }
+    // })
+
+    // return  enhancedProducts
+  },
+  getASingleProduct: async (id) => {
+    try {
+      const ifExists = await productRepository.getSingleProduct(id)
+      if (!ifExists) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'Give a valid Product Id',
+        })
+      }
+      const enhancedProduct = await this.filterProducts(ifExists)
+      return enhancedProduct
+    } catch (error) {
+      throw error
+    }
+  },
+  filterProducts: async function (products) {
+    if (!Array.isArray(products)) {
+      products = [products]
+    }
+
+    return products.map((product) => {
       const { dataValues } = product
 
       const discountPercent = dataValues.discounts
@@ -25,6 +80,7 @@ const productService = ({
       const saleStatus = discountPercent > 0 ? 'Sale' : 'No Sale'
 
       return {
+        id: dataValues.id,
         name: dataValues.name,
         desc: dataValues.desc,
         price: dataValues.price,
@@ -37,8 +93,6 @@ const productService = ({
         inventory: dataValues.inventory,
       }
     })
-
-    return { products: enhancedProducts }
   },
   updateProduct: async (id, name, desc, price, discountId, quantity) => {
     try {

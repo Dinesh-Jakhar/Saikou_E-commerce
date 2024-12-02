@@ -11,6 +11,17 @@ module.exports = ({ productService, CustomError }) => ({
       return next(error)
     }
   },
+  getASingleProduct: async (req, res, next) => {
+    try {
+      const id = req.params.productId
+      const myProd = await productService.getASingleProduct(id)
+      return res.status(200).json({
+        product: myProd,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
   addNewProduct: async (req, res, next) => {
     try {
       const { name, desc, price, discountId, unitsInStock } = req.body

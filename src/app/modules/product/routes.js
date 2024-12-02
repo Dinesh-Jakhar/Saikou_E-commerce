@@ -18,6 +18,7 @@ const product = createController(product_controller)
       payloadValidationMiddleware(dto.addDiscount),
     ],
   })
+  .get('/single/:productId', 'getASingleProduct')
   .post('/addNew', 'addNewProduct', {
     before: [
       authenticateJWT,
