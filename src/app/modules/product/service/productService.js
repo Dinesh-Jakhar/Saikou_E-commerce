@@ -8,7 +8,6 @@ const productService = ({
   allProductsRoleWise: async function () {
     const allProds = await productRepository.allProducts()
     const enhancedProducts = await this.filterProducts(allProds)
-    console.log(enhancedProducts)
     return enhancedProducts
 
     // const enhancedProducts = allProds.map((product) => {
@@ -43,7 +42,7 @@ const productService = ({
 
     // return  enhancedProducts
   },
-  getASingleProduct: async (id) => {
+  getASingleProduct: async function (id) {
     try {
       const ifExists = await productRepository.getSingleProduct(id)
       if (!ifExists) {

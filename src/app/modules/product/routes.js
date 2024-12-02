@@ -18,11 +18,11 @@ const product = createController(product_controller)
       payloadValidationMiddleware(dto.addDiscount),
     ],
   })
-  .get('/single/:productId', 'getASingleProduct')
+  .get('/:productId', 'getASingleProduct')
   .post('/addNew', 'addNewProduct', {
     before: [
-      authenticateJWT,
-      authorize('admin'),
+      // authenticateJWT,
+      // authorize('admin'),
       uploadMultipleImages,
       payloadValidationMiddleware(dto.addProduct),
     ],

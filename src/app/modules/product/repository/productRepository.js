@@ -1,10 +1,9 @@
 const productRepository = ({ writerDatabase, readerDatabase }) => ({
-  getSingleProduct: async () => {
+  getSingleProduct: async (id) => {
     try {
       const productModel = await readerDatabase('Product')
       const inventoryModel = await readerDatabase('Inventory')
       const discountModel = await readerDatabase('Discount')
-
       const myProd = await productModel.findOne({
         include: [
           {
@@ -30,6 +29,7 @@ const productRepository = ({ writerDatabase, readerDatabase }) => ({
         where: { id: id },
         paranoid: true,
       })
+      console.log(myProd)
       return myProd
     } catch (error) {
       throw error
@@ -55,6 +55,7 @@ const productRepository = ({ writerDatabase, readerDatabase }) => ({
           },
         ],
         attributes: [
+          'id',
           'name',
           'desc',
           'price',

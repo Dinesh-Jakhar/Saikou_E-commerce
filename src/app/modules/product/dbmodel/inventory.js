@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     'Inventory',
     {
       productId: {
-        type: DataTypes.UUID,
+        type: DataTypes.INTEGER,
         primaryKey: true,
         references: {
           model: 'Product',
