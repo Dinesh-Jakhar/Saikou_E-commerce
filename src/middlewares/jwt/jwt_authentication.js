@@ -57,6 +57,7 @@ const authenticateJWT = asyncErrorHandler(async (req, res, next) => {
       id: user.id,
       email: user.email,
       role: user.role,
+      // session_id:user?.session_id
     }
 
     next()

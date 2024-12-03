@@ -60,6 +60,14 @@ module.exports = (sequelize, DataTypes) => {
 
   User.associate = (models) => {
     User.hasMany(models.Address, { foreignKey: 'userId', as: 'addresses' })
+    User.hasMany(models.ShoppingSession, {
+      foreignKey: 'userId',
+      as: 'shoppingSessions',
+    })
+    User.hasMany(models.CartItem, {
+      foreignKey: 'userId',
+      as: 'cartItems',
+    })
   }
 
   return User

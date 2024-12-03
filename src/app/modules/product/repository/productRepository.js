@@ -1,4 +1,13 @@
 const productRepository = ({ writerDatabase, readerDatabase }) => ({
+  validProductId: async (id) => {
+    try {
+      const productModel = await readerDatabase('Product')
+      const product = await productModel.findOne({ where: { id: id } })
+      return product
+    } catch (error) {
+      throw error
+    }
+  },
   getSingleProduct: async (id) => {
     try {
       const productModel = await readerDatabase('Product')
