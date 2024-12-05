@@ -90,15 +90,72 @@ const cartRepository = ({
       throw error
     }
   },
-  cart_item: async (userId, productId, sessionId) => {
+  cart_item: async (userId, productId, sessionId, transaction) => {
     try {
       const cartItemModel = await writerDatabase('CartItem')
       const cartItem = await cartItemModel.findOne({
         where: {
           [Op.and]: [{ userId }, { productId }, { sessionId }],
         },
+        paranoid: true,
+        transaction,
       })
+
       return cartItem
+    } catch (error) {
+      throw error
+    }
+  },
+  getShoppingSession: async (userId) => {
+    try {
+      const ShoppingSessionModel = await writerDatabase('ShoppingSession')
+      const session = await ShoppingSessionModel.findOne({
+        where: { userId, status: 'active' },
+      })
+      return session
+    } catch (error) {
+      throw error
+    }
+  },
+  cartItemsOfUser: async (sessionId) => {
+    try {
+      const cartItemModel = await writerDatabase('CartItem')
+      const productModel = await readerDatabase('Product')
+      const inventoryModel = await readerDatabase('Inventory')
+      const discountModel = await readerDatabase('Discount')
+      const cartItems = await cartItemModel.findAll({
+        where: { sessionId },
+        include: [
+          {
+            model: productModel,
+            as: 'product',
+            attributes: [
+              'id',
+              'name',
+              'desc',
+              'price',
+              'deletedAt',
+              'imageUrls',
+              'createdAt',
+            ],
+            paranoid: true,
+            include: [
+              {
+                model: inventoryModel,
+                as: 'inventory',
+                attributes: ['quantity'],
+              },
+              {
+                model: discountModel,
+                as: 'discounts',
+                attributes: ['id', 'name', 'discount_percent'],
+                paranoid: true,
+              },
+            ],
+          },
+        ],
+      })
+      return cartItems
     } catch (error) {
       throw error
     }

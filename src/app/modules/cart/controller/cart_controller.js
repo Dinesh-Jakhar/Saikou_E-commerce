@@ -36,4 +36,16 @@ module.exports = ({ cartService, CustomError, HTTP_ERRORS }) => ({
       return next(error)
     }
   },
+  getCartItems: async (req, res, next) => {
+    try {
+      const userId = req.user.id
+      const cartProducts = await cartService.getCartItems(userId)
+      return res.status(200).json({
+        status: 'success',
+        cartProducts: cartProducts,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
 })

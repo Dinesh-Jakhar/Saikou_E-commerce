@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       userId: {
         type: DataTypes.UUID,
-        allowNull: true, // Nullable for guest sessions
+        allowNull: false, // Nullable for guest sessions
         references: {
           model: 'User',
           key: 'id',

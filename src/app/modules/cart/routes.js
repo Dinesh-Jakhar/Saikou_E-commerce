@@ -7,7 +7,7 @@ const authenticateJWT = require('../../../middlewares/jwt/jwt_authentication')
 const { uploadMultipleImages } = require('../../../middlewares/multer/multer')
 
 const cart = createController(cart_controller)
-  .prefix('/cart')
+  .prefix('/myCart')
   .post('/add', 'addToCart', {
     before: [authenticateJWT, payloadValidationMiddleware(dto.addToCart)],
   })
@@ -16,6 +16,9 @@ const cart = createController(cart_controller)
       authenticateJWT,
       payloadValidationMiddleware(dto.updateProductCount),
     ],
+  })
+  .get('/', 'getCartItems', {
+    before: [authenticateJWT],
   })
 
 module.exports = cart
