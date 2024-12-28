@@ -8,9 +8,15 @@ const path = require('node:path')
 const { ROUTES_PATH } = require('../app/constants/constants')
 const moduleNames = require('../infra/database/db_exposed_models')
 const appContainer = require('../app/container')
-
+const controller = appContainer.resolve('order_controller')
+const bodyParser = require('body-parser')
 module.exports = () => {
   const apiRouter = Router()
+  apiRouter.post(
+    '/checkout/stripe-webhook',
+    bodyParser.raw({ type: 'application/json' }),
+    controller.myStripeWebhook
+  )
   apiRouter
     .use(
       urlencoded({

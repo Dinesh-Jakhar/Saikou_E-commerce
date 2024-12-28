@@ -1,26 +1,17 @@
 module.exports = (sequelize, DataTypes) => {
-  const CartItem = sequelize.define(
-    'CartItem',
+  const OrderItem = sequelize.define(
+    'OrderItem',
     {
       id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      sessionId: {
+      orderId: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'ShoppingSession',
-          key: 'id',
-        },
-      },
-      userId: {
-        //Remove this later as it is also in ShoppingSession
-        type: DataTypes.UUID,
-        allowNull: false, //Do Nullable for guest items
-        references: {
-          model: 'User',
+          model: 'OrderDetail',
           key: 'id',
         },
       },
@@ -37,6 +28,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 1,
       },
+      orderItemAmount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
       createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -51,25 +46,21 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'CartItem',
+      tableName: 'OrderItem',
       timestamps: true,
     }
   )
 
-  CartItem.associate = (models) => {
-    CartItem.belongsTo(models.ShoppingSession, {
-      foreignKey: 'sessionId',
-      as: 'session',
+  OrderItem.associate = (models) => {
+    OrderItem.belongsTo(models.OrderDetail, {
+      foreignKey: 'orderId',
+      as: 'orderDetail',
     })
-    CartItem.belongsTo(models.Product, {
+    OrderItem.belongsTo(models.Product, {
       foreignKey: 'productId',
       as: 'product',
     })
-    CartItem.belongsTo(models.User, {
-      foreignKey: 'userId',
-      as: 'user',
-    })
   }
 
-  return CartItem
+  return OrderItem
 }

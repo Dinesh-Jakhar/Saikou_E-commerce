@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stripe Payment Test</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Include Stripe.js -->
+  </head>
+  <body>
+    <h2>Stripe Payment Confirmation Test</h2>
+
+    <!-- Payment Form -->
+    <form id="payment-form">
+      <div id="card-element">
+        <!-- A Stripe Element will be inserted here. -->
+      </div>
+
+      <!-- Submit Button -->
+      <button id="submit">Pay</button>
+
+      <!-- Error Message -->
+      <div id="error-message"></div>
+    </form>
+
+    <script>
+      // Initialize Stripe with your publishable key
+      const stripe = Stripe(
+        'pk_test_51QXQWeLApxD3Rye9LmudMqOM21A0Fg9WFsLdESdKeoyJTOGScgIrrp2P6RVKItcyVvVjCoPHdtAZUSDMR5RLcqX500lcwBF38J'
+      ) // Replace with your Stripe public key
+
+      // This is the client secret that comes from your backend after creating the Payment Intent
+      const clientSecret =
+        'pi_3QaVW2LApxD3Rye91nhlTHf7_secret_TmYH409aNOS2h4OrHdrcSjhdF' // Replace with the actual client secret from your backend
+
+      // Create an instance of Stripe Elements
+      const elements = stripe.elements()
+
+      // Create an instance of the Card Element
+      const card = elements.create('card')
+
+      // Mount the Card Element into the DOM
+      card.mount('#card-element')
+
+      // Get the payment form and add an event listener for form submission
+      const form = document.getElementById('payment-form')
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault()
+
+        // Confirm the payment using the client secret and card details
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          {
+            payment_method: {
+              card: card, // The card element created above
+              billing_details: {
+                name: 'Customer Name', // Give email of the customer
+              },
+            },
+          }
+        )
+
+        // Handle errors if any (e.g., insufficient funds, authentication required)
+        if (error) {
+          document.getElementById('error-message').textContent = error.message
+        } else if (paymentIntent.status === 'succeeded') {
+          // Payment successful
+          alert('Payment Successful!')
+          console.log('Payment succeeded:', paymentIntent)
+        }
+      })
+    </script>
+  </body>
+</html>

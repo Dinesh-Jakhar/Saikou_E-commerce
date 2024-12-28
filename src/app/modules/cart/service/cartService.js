@@ -111,7 +111,7 @@ const cartService = ({
       const sessionId = session.id
       const cartItems = await cartRepository.cartItemsOfUser(sessionId)
       const processCartItems = await this.processCartItems(cartItems)
-      return processCartItems
+      return { ...processCartItems, sessionId }
     } catch (error) {
       throw error
     }
@@ -129,22 +129,19 @@ const cartService = ({
           errors: `Product or inventory details are missing for product ID ${cartItem.productId}`,
         })
       }
-
       const basePrice = parseFloat(product.price)
       const discountPercent = product.discounts
-        ? parseFloat(product.discounts.discount_percent)
+        ? parseFloat(product.discounts.dataValues.discount_percent)
         : 0
       const availableStock = parseInt(product.inventory.quantity, 10)
       const cartQuantity = parseInt(cartItem.quantity, 10)
       const anyOffer = discountPercent == 0 ? 'No Sale' : 'In Sale'
       // Calculate the final price after discount
       const finalPrice = basePrice - (basePrice * discountPercent) / 100
-
       // Check stock availability
+      let message = 'InStock'
       if (cartQuantity > availableStock) {
-        throw new Error(
-          `Insufficient stock for product ID ${cartItem.productId}. Requested: ${cartQuantity}, Available: ${availableStock}`
-        )
+        message = 'OutOfStock'
       }
 
       // Return the processed item details
@@ -158,6 +155,7 @@ const cartService = ({
         finalPrice: finalPrice.toFixed(2), // Round to 2 decimal places
         quantity: cartQuantity,
         availableStock,
+        message,
         totalPrice: (finalPrice * cartQuantity).toFixed(2), // Total price for the quantity
         imageUrls: product.imageUrls,
         anyOffer: anyOffer,

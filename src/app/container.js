@@ -10,6 +10,7 @@ const {
 } = require('../infra/database/database')
 const path = require('node:path')
 const emailService = require('./config/emailService')
+const stripe = require('./config/stripe')
 const logger = require('./logger/logger')
 const asyncErrorHandler = require('../middlewares/error_handler/async_errors')
 const CustomError = require('../middlewares/error_handler/CustomError')
@@ -37,6 +38,7 @@ container.register({
   CustomError: asValue(CustomError),
   ERRORS: asValue(ERRORS),
   emailService: asValue(emailService),
+  stripe: asValue(stripe),
   constants: asValue(constants),
   HTTP_ERRORS: asValue(HTTP_ERROR),
   fs: asValue(fs),
@@ -63,6 +65,16 @@ modulePaths.forEach((module) => {
   //loading service
   container.loadModules(
     path.join(__dirname, ROUTES_PATH, module, '/service/*.js'),
+    {
+      cwd: __dirname,
+      resolverOptions: {
+        lifetime: Lifetime.SINGLETON,
+        register: asFunction,
+      },
+    }
+  )
+  container.loadModules(
+    path.join(__dirname, ROUTES_PATH, module, '/controller/*.js'),
     {
       cwd: __dirname,
       resolverOptions: {
