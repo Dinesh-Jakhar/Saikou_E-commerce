@@ -3,9 +3,10 @@ module.exports = (sequelize, DataTypes) => {
     'OrderDetail',
     {
       id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
+        type: DataTypes.STRING,
+        allowNull: false,
         primaryKey: true,
+        unique: true,
       },
       userId: {
         type: DataTypes.UUID,
@@ -15,19 +16,39 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
+      addressId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+          model: 'Address',
+          key: 'id',
+        },
+      },
       total: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
+      },
+      shippingSpeedCategory: {
+        type: DataTypes.ENUM('Standard', 'Expedited', 'Priority'),
+        allowNull: true,
+        defaultValue: 'Standard',
+      },
+      fulfillmentAction: {
+        type: DataTypes.ENUM('Ship', 'Hold'),
+        allowNull: true,
+        defaultValue: 'Hold', //change this to ship
+      },
+      fulfillmentPolicy: {
+        type: DataTypes.ENUM('FillOrKill', 'FillAllAvailable'),
+        allowNull: true,
+        defaultValue: 'FillOrKill',
       },
       order_status: {
         type: DataTypes.ENUM,
         values: [
           'pending',
-          // 'failed',
-          'accepted',
-          'shipped',
-          'delivered',
-          'canceled',
+          'pendingAmazon',
+          'onAmazon',
           'return_requested',
           'returned',
           'return_failed',
@@ -35,6 +56,7 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 'pending',
         allowNull: false,
       },
+
       // paymentId: {
       //   type: DataTypes.UUID,
       //   allowNull: true,
@@ -74,6 +96,10 @@ module.exports = (sequelize, DataTypes) => {
     OrderDetail.hasMany(models.OrderItem, {
       foreignKey: 'orderId',
       as: 'orderItems',
+    })
+    OrderDetail.belongsTo(models.Address, {
+      foreignKey: 'addressId',
+      as: 'address',
     })
     OrderDetail.hasOne(models.PaymentDetails, {
       foreignKey: 'orderId',

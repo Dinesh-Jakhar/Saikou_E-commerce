@@ -3,8 +3,8 @@ module.exports = (sequelize, DataTypes) => {
     'Product',
     {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
       name: {
@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       desc: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       price: {
@@ -31,6 +31,21 @@ module.exports = (sequelize, DataTypes) => {
           model: 'Discount',
           key: 'id',
         },
+      },
+      sellerSku: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      fnSku: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      asin: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -68,58 +83,32 @@ module.exports = (sequelize, DataTypes) => {
   return Product
 }
 
-//    // Transform the data for better response formatting
-//    const formattedProducts = products.map((product) => {
-//     const discount = product.Discount
-//       ? product.Discount.discount_percent
-//       : 0;
-//     const discountedPrice =
-//       product.price - (product.price * discount) / 100;
-
-//     return {
-//       id: product.id,
-//       name: product.name,
-//       description: product.desc,
-//       original_price: product.price,
-//       final_price: discountedPrice.toFixed(2), // Round to 2 decimal places
-//       discount: product.Discount
-//         ? {
-//             id: product.Discount.id,
-//             name: product.Discount.name,
-//             discount_percent: discount,
-//             active: product.Discount.active,
-//           }
-//         : null,
-//       inventory: product.ProductInventory
-//         ? {
-//             quantity: product.ProductInventory.quantity,
-//             status:
-//               product.ProductInventory.quantity > 0
-//                 ? "In Stock"
-//                 : "Out of Stock",
-//           }
-//         : null,
-//       created_at: product.created_at,
-//       updated_at: product.updated_at,
-//     };
+// const generateSKU = async () => {
+//   const lastProduct = await Product.findOne({
+//     order: [['createdAt', 'DESC']],  // Get latest product
 //   });
 
-//   // Example pagination (mocked for now)
-//   const pagination = {
-//     total: formattedProducts.length,
-//     limit: 10,
-//     page: 1,
-//   };
+//   if (lastProduct) {
+//     const lastSku = lastProduct.id.replace('SKU', '');  // Remove "SKU" prefix
+//     const nextSku = parseInt(lastSku) + 1;  // Increment numeric part
+//     return `SKU${String(nextSku).padStart(4, '0')}`;  // Format to SKU0001, SKU0002
+//   } else {
+//     return 'SKU0001';  // Default for first product
+//   }
+// };
 
-//   res.json({
-//     status: "success",
-//     data: {
-//       products: formattedProducts,
-//     },
-//     pagination,
+// // Create a New Product with SKU
+// const createProduct = async (productData) => {
+//   const sku = await generateSKU();
+
+//   const newProduct = await Product.create({
+//     id: sku,
+//     name: productData.name,
+//     desc: productData.desc,
+//     price: productData.price,
+//     imageUrls: productData.imageUrls,
 //   });
-// } catch (err) {
-//   console.error(err);
-//   res.status(500).json({ status: "error", message: "Internal server error" });
-// }
-// });
+
+//   return newProduct;
+// };
+//UUID

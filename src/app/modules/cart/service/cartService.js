@@ -19,8 +19,7 @@ const cartService = ({
           errors: 'No Such Product Exists',
         })
       }
-
-      const availableStock = productInventory.inventory.quantity
+      const availableStock = productInventory.inventory?.quantity
       if (availableStock < quantity) {
         throw new CustomError({
           ...HTTP_ERRORS.BAD_REQUEST,

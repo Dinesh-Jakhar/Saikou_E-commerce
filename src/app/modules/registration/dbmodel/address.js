@@ -14,17 +14,25 @@ module.exports = (sequelize, DataTypes) => {
           model: 'User',
           key: 'id',
         },
-        //   onDelete: 'CASCADE',
+        // onDelete: 'CASCADE',
       },
-      addressLine: {
+      addressLine1: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      phoneNumber: {
+      addressLine2: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       city: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      districtOrCounty: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      stateOrRegion: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -32,13 +40,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      country: {
-        type: DataTypes.STRING,
+      countryCode: {
+        type: DataTypes.STRING(2), // ISO 3166-1 alpha-2 format
         allowNull: false,
+        defaultValue: 'US',
       },
-      state: {
+      phone: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       isDefault: {
         type: DataTypes.BOOLEAN,

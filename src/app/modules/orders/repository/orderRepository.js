@@ -63,15 +63,30 @@ const cartRepository = ({
     userId,
     totalAmount,
     orderItemsToCreate,
+    addressId,
     transaction
   ) => {
     try {
       const orderDetailModel = await writerDatabase('OrderDetail')
       const OrderItemModel = await writerDatabase('OrderItem')
+
+      const lastOrder = await orderDetailModel.findOne({
+        order: [['createdAt', 'DESC']],
+        transaction,
+      })
+      const lastOrderNumber = lastOrder
+        ? parseInt(lastOrder.id.replace('#ORDER-', '')) + 1
+        : 678
+
+      const orderId = `#ORDER-${String(lastOrderNumber).padStart(4, '0')}`
+
       const orderDetail = await orderDetailModel.create(
         {
+          id: orderId,
           userId: userId,
           total: totalAmount,
+          addressId: addressId,
+          order_status: 'pending',
         },
         {
           transaction,

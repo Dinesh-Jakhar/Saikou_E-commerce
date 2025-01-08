@@ -1,9 +1,14 @@
 const bodyParser = require('body-parser')
-module.exports = ({ orderService, CustomError, HTTP_ERRORS }) => ({
+module.exports = ({
+  orderService,
+  CustomError,
+  HTTP_ERRORS,
+  SellingPartner,
+}) => ({
   checkOutTheOrder: async (req, res, next) => {
     try {
       const userId = req.user.id
-      const { sessionId } = req.body
+      const { sessionId, addressId } = req.body
       //check if valid session_id
       const isValid = await orderService.checkForValidSessionId(sessionId)
       if (!isValid) {
@@ -12,7 +17,11 @@ module.exports = ({ orderService, CustomError, HTTP_ERRORS }) => ({
           errors: 'Session Id is not valid',
         })
       }
-      const checkout = await orderService.checkOutTheOrder(sessionId, userId)
+      const checkout = await orderService.checkOutTheOrder(
+        sessionId,
+        userId,
+        addressId
+      )
       return res.status(201).json({
         status: 'success',
         checkout,
@@ -45,6 +54,18 @@ module.exports = ({ orderService, CustomError, HTTP_ERRORS }) => ({
       console.log(`Order status updated to: ${status}`)
     } catch (error) {
       console.error('Error updating order status:', error)
+    }
+  },
+  getAllOrders: async (req, res, next) => {
+    try {
+      const orders = await SellingPartner.listAllFulfillmentOrders()
+
+      return res.status(200).json({
+        success: true,
+        orders,
+      })
+    } catch (error) {
+      return next(error)
     }
   },
 })

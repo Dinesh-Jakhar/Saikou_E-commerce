@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
       },
       orderId: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING,
         allowNull: false,
         references: {
           model: 'OrderDetail',
@@ -16,12 +16,16 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       productId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
           model: 'Product',
           key: 'id',
         },
+      },
+      sellerSku: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       quantity: {
         type: DataTypes.INTEGER,

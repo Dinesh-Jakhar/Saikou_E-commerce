@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       productId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
           model: 'Product',

@@ -15,7 +15,7 @@ const orderService = ({
       throw error
     }
   },
-  checkOutTheOrder: async (sessionId, userId) => {
+  checkOutTheOrder: async (sessionId, userId, addressId) => {
     const transaction = await writerSequelize.transaction()
     try {
       //Calculate the total()
@@ -34,6 +34,9 @@ const orderService = ({
 
         if (product) {
           const price = parseFloat(product.price)
+
+          const seller_sku = product.sellerSku
+
           const discountPercent =
             product.discounts && product.discounts.discountPercent
               ? parseFloat(product.discounts.discountPercent)
@@ -57,6 +60,7 @@ const orderService = ({
             productId: productId,
             quantity: quantity,
             orderItemAmount: finalPrice * quantity,
+            sellerSku: seller_sku,
           })
         }
       }
@@ -69,8 +73,9 @@ const orderService = ({
         userId,
         formattedTotal,
         orderItemsToCreate,
+        addressId,
         transaction
-      )
+      ) //Math round might create problem
       const totalAmountInCents = Math.round(formattedTotal * 100)
       // Step 3: Create Stripe payment intent
       const paymentIntent = await stripe.createPaymentIntent(
@@ -81,7 +86,7 @@ const orderService = ({
       const paymentDetails = await orderRepository.createPaymentDetails(
         {
           orderId: orderDetailAndItems.id,
-          //amount: formattedTotal,
+          amount: formattedTotal,
           //provider: 'stripe',
           status: 'pending',
           paymentId: paymentIntent.id,
@@ -161,13 +166,14 @@ const orderService = ({
       await orderRepository.updateUserCart(userId)
 
       // Update the order status to 'accepted' after successful payment
-      await orderRepository.updatedOrderDetail(orderId, 'accepted')
-
+      await orderRepository.updatedOrderDetail(orderId, 'pendingAmazon')
       // Send confirmation email to user
       const userAccount = await orderRepository.checkIfExistsByID(userId)
-      const emailTitle = 'Order Confirmation'
-      const emailBody = `<p><strong>Congratulations!</strong> Your order has been successfully placed.</p>`
+      const emailTitle = 'Payment Confirmation'
+      const emailBody = `<p><strong>Congratulations!</strong> Your Payment was successful.</p>`
       await emailService.mailSender(userAccount.email, emailTitle, emailBody)
+
+      //CREATE ORDER USING AMAZON SP-API FBA
 
       console.log('PaymentIntent succeeded for order ID:', orderId)
     } catch (error) {

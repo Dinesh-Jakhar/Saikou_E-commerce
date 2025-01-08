@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false, // Stripe Payment Intent ID
       },
       orderId: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING,
         allowNull: false,
         references: {
           model: 'OrderDetail',

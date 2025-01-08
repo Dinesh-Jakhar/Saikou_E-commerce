@@ -18,7 +18,7 @@ const authorize = (roles = []) => {
 
       const accountModel = await readerDatabase('User')
       const account = await accountModel.findOne({
-        attributes: ['id', 'role', 'emailVerified'],
+        attributes: ['id', 'role'],
         where: { id: user.id },
       })
 

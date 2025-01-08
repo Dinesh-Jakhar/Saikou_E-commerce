@@ -9,7 +9,13 @@ const express = require('express')
 const order = createController(order_controller)
   .prefix('/checkout')
   .post('/', 'checkOutTheOrder', {
-    before: [authenticateJWT, payloadValidationMiddleware(dto.checkout)],
+    before: [
+      authenticateJWT,
+      // , payloadValidationMiddleware(dto.checkout)
+    ],
+  })
+  .get('/allOrders', 'getAllOrders', {
+    before: [authenticateJWT, authorize('admin')],
   })
 // .post('/stripe-webhook','myStripeWebhook',{
 //   before:[express.raw({ type: 'application/json' })]}

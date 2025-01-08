@@ -10,6 +10,8 @@ const {
 } = require('../infra/database/database')
 const path = require('node:path')
 const emailService = require('./config/emailService')
+const SellingPartner = require('./config/sp-api')
+const queues = require('./config/queues')
 const stripe = require('./config/stripe')
 const logger = require('./logger/logger')
 const asyncErrorHandler = require('../middlewares/error_handler/async_errors')
@@ -38,6 +40,8 @@ container.register({
   CustomError: asValue(CustomError),
   ERRORS: asValue(ERRORS),
   emailService: asValue(emailService),
+  queues: asValue(queues),
+  SellingPartner: asValue(SellingPartner),
   stripe: asValue(stripe),
   constants: asValue(constants),
   HTTP_ERRORS: asValue(HTTP_ERROR),

@@ -7,7 +7,7 @@ const registration = createController(registration_controller)
   .prefix('/user')
   .post('/signup', 'signup', {
     before: [payloadValidationMiddleware(dto.signup)],
-  })
+  }) //get api for address
   .post('/login', 'login', {
     before: [payloadValidationMiddleware(dto.login)],
   })
