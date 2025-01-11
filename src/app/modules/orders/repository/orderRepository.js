@@ -1,6 +1,4 @@
-const { Op } = require('sequelize') // Import Sequelize operators
-
-const cartRepository = ({
+const orderRepository = ({
   writerDatabase,
   readerDatabase,
   CustomError,
@@ -69,6 +67,7 @@ const cartRepository = ({
     try {
       const orderDetailModel = await writerDatabase('OrderDetail')
       const OrderItemModel = await writerDatabase('OrderItem')
+      const fulfillmentOrderModel = await writerDatabase('FulfillmentShipment')
 
       const lastOrder = await orderDetailModel.findOne({
         order: [['createdAt', 'DESC']],
@@ -100,6 +99,14 @@ const cartRepository = ({
       await OrderItemModel.bulkCreate(orderItemsWithOrderId, {
         transaction,
       })
+      await fulfillmentOrderModel.create(
+        {
+          orderId,
+        },
+        {
+          transaction,
+        }
+      )
 
       return orderDetail
     } catch (error) {
@@ -203,4 +210,4 @@ const cartRepository = ({
   },
 })
 
-module.exports = cartRepository
+module.exports = orderRepository

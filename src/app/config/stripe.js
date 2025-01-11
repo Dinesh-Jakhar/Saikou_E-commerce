@@ -3,7 +3,12 @@ const config = require('./config')
 
 const stripe = require('stripe')(config.STRIPE_SECRET_KEY)
 
-const createPaymentIntent = async (totalAmount, userId, order_id) => {
+const createPaymentIntent = async (
+  totalAmount,
+  userId,
+  order_id,
+  user_email
+) => {
   try {
     // Create a Payment Intent with the total amount
     const paymentIntent = await stripe.paymentIntents.create({
@@ -13,6 +18,7 @@ const createPaymentIntent = async (totalAmount, userId, order_id) => {
       metadata: {
         user_id: userId,
         user_order_id: order_id,
+        user_email: user_email,
       },
     })
 

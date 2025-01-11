@@ -49,6 +49,80 @@ async function listAllFulfillmentOrders() {
   }
 }
 
+async function createFulfillmentOrder(orderDetails) {
+  const client = await initSPClient()
+  try {
+    const response = await client.callAPI({
+      operation: 'createFulfillmentOrder',
+      endpoint: 'fulfillmentOutbound',
+      body: {
+        sellerFulfillmentOrderId: orderDetails.sellerFulfillmentOrderId,
+        displayableOrderId: orderDetails.displayableOrderId,
+        displayableOrderDate: orderDetails.displayableOrderDate,
+        displayableOrderComment: 'Thank you for your purchase!',
+        // displayableOrderComment: orderDetails.displayableOrderComment,
+        shippingSpeedCategory: 'Standard',
+        destinationAddress: {
+          name: orderDetails.destinationAddress.name,
+          addressLine1: orderDetails.destinationAddress.addressLine1,
+          addressLine2: orderDetails.destinationAddress.addressLine2,
+          city: orderDetails.destinationAddress.city,
+          districtOrCounty: orderDetails.destinationAddress.districtOrCounty,
+          stateOrRegion: orderDetails.destinationAddress.stateOrRegion,
+          postalCode: orderDetails.destinationAddress.postalCode,
+          countryCode: orderDetails.destinationAddress.countryCode,
+          phoneNumber: orderDetails.destinationAddress.phoneNumber,
+        },
+        fulfillmentAction: 'Hold',
+        fulfillmentPolicy: 'FillAll',
+        notificationEmails: orderDetails.notificationEmails || [],
+        marketplaceId: config.MARKET_PLACE_ID,
+        items: orderDetails.items.map((item) => ({
+          sellerSku: item.sellerSku,
+          sellerFulfillmentOrderItemId: item.productId,
+          quantity: item.quantity,
+          giftMessage: 'Wishing you joy and happiness with your new purchase!',
+          // displayableComment: item.displayableComment,
+        })),
+      },
+    })
+
+    //console.log('Fulfillment order created successfully:', response);
+    return response
+  } catch (error) {
+    console.error('Error creating fulfillment order:', error)
+    throw error
+  }
+}
+async function getFulfillmentOrder(orderId) {
+  const client = await initSPClient()
+  return client.callAPI({
+    operation: 'getFulfillmentOrder',
+    endpoint: 'fulfillmentOutbound',
+    path: { sellerFulfillmentOrderId: orderId },
+  })
+}
+
+async function fetchTrackingDetails(packageNumber) {
+  const client = await initSPClient()
+  try {
+    return await client.callAPI({
+      operation: 'getPackageTrackingDetails',
+      endpoint: 'fulfillmentOutbound',
+      query: { packageNumber },
+    })
+  } catch (error) {
+    console.error(
+      `Error fetching tracking details for package: ${packageNumber}`,
+      error
+    )
+    throw error
+  }
+}
+
 module.exports = {
   listAllFulfillmentOrders,
+  createFulfillmentOrder,
+  getFulfillmentOrder,
+  fetchTrackingDetails,
 }

@@ -28,20 +28,20 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
       },
-      shippingSpeedCategory: {
-        type: DataTypes.ENUM('Standard', 'Expedited', 'Priority'),
-        allowNull: true,
-        defaultValue: 'Standard',
-      },
-      fulfillmentAction: {
-        type: DataTypes.ENUM('Ship', 'Hold'),
-        allowNull: true,
-        defaultValue: 'Hold', //change this to ship
-      },
-      fulfillmentPolicy: {
-        type: DataTypes.ENUM('FillOrKill', 'FillAllAvailable'),
-        allowNull: true,
-        defaultValue: 'FillOrKill',
+      fulfillmentOrderStatus: {
+        type: DataTypes.ENUM(
+          'New',
+          'Received',
+          'Planning',
+          'Processing',
+          'Cancelled',
+          'Complete',
+          'CompletePartialled',
+          'Unfulfillable',
+          'Invalid'
+        ), //Pending is any other status
+        allowNull: false,
+        defaultValue: 'Received',
       },
       order_status: {
         type: DataTypes.ENUM,

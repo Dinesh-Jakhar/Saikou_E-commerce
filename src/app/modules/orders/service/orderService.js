@@ -1,5 +1,3 @@
-const { error } = require('winston')
-const config = require('../../../config/config')
 const orderService = ({
   orderRepository,
   CustomError,
@@ -7,6 +5,7 @@ const orderService = ({
   writerSequelize,
   stripe,
   emailService,
+  queues,
 }) => ({
   checkForValidSessionId: async (sessionId) => {
     try {
@@ -19,6 +18,14 @@ const orderService = ({
     const transaction = await writerSequelize.transaction()
     try {
       //Calculate the total()
+      const userData = await orderRepository.checkIfExistsByID(userId)
+      if (!userData) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'User Id is invalid',
+        })
+      }
+      const user_email = userData.email
       const productData = await orderRepository.findAllCartProducts(sessionId)
       let totalAmount = 0
       const productIds = productData.map((cartProduct) => cartProduct.productId)
@@ -81,12 +88,13 @@ const orderService = ({
       const paymentIntent = await stripe.createPaymentIntent(
         totalAmountInCents,
         userId,
-        orderDetailAndItems.id
+        orderDetailAndItems.id,
+        user_email
       )
       const paymentDetails = await orderRepository.createPaymentDetails(
         {
           orderId: orderDetailAndItems.id,
-          amount: formattedTotal,
+          //amount: formattedTotal,
           //provider: 'stripe',
           status: 'pending',
           paymentId: paymentIntent.id,
@@ -146,6 +154,7 @@ const orderService = ({
     try {
       const paymentIntent = event.data.object
       const userId = paymentIntent.metadata.user_id
+      const userEmail = paymentIntent.metadata.user_email
       const orderId = paymentIntent.metadata.user_order_id
       const paymentId = paymentIntent.id
 
@@ -167,13 +176,18 @@ const orderService = ({
 
       // Update the order status to 'accepted' after successful payment
       await orderRepository.updatedOrderDetail(orderId, 'pendingAmazon')
+      await queues.orderCreationQueue({ userId, orderId, userEmail: userEmail })
+
       // Send confirmation email to user
-      const userAccount = await orderRepository.checkIfExistsByID(userId)
       const emailTitle = 'Payment Confirmation'
       const emailBody = `<p><strong>Congratulations!</strong> Your Payment was successful.</p>`
-      await emailService.mailSender(userAccount.email, emailTitle, emailBody)
+      await queues.addEmailToQueue(
+        paymentIntent.metadata.user_email,
+        emailTitle,
+        emailBody
+      )
 
-      //CREATE ORDER USING AMAZON SP-API FBA
+      //await emailService.mailSender(userEmail, emailTitle, emailBody)
 
       console.log('PaymentIntent succeeded for order ID:', orderId)
     } catch (error) {
@@ -184,7 +198,6 @@ const orderService = ({
   handlePaymentFailed: async function (event) {
     try {
       const failedPaymentIntent = event.data.object
-      const userId = failedPaymentIntent.metadata.user_id
       const orderId = failedPaymentIntent.metadata.user_order_id
       const paymentId = failedPaymentIntent.id
 
@@ -207,10 +220,14 @@ const orderService = ({
       //await orderRepository.updatedOrderDetail(orderId, 'failed');
 
       // Send failure notification email to user
-      const userAccount = await orderRepository.checkIfExistsByID(userId)
+      // const userAccount = await orderRepository.checkIfExistsByID(userId)
       const emailTitle = 'Payment Failed'
       const emailBody = `<p><strong>Sorry!</strong> Your payment failed. Please try again.</p><p>Reason: ${failureMessage}</p>`
-      await emailService.mailSender(userAccount.email, emailTitle, emailBody)
+      await queues.addEmailToQueue(
+        paymentIntent.metadata.user_email,
+        emailTitle,
+        emailBody
+      )
 
       console.log('PaymentIntent failed for order ID:', orderId)
     } catch (error) {

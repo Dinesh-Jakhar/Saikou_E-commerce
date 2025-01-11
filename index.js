@@ -1,6 +1,7 @@
 const logger = require('./src/app/logger/logger')
 const server = require('./src/http/server')
-
+const container = require('./src/app/container')
+const config = require('./src/app/config/config')
 async function startApplication() {
   const app = server('app')
 
@@ -22,7 +23,9 @@ async function startApplication() {
 
   try {
     await app.startServer()
-
+    if (config.CRON_START == 'true') {
+      container.resolve('cronJobs').startCronJob()
+    }
     console.log('Server started successfully')
   } catch (error) {
     console.log(`Error occurred while starting server: ${error}`)

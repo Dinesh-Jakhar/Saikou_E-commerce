@@ -12,6 +12,7 @@ const path = require('node:path')
 const emailService = require('./config/emailService')
 const SellingPartner = require('./config/sp-api')
 const queues = require('./config/queues')
+const cronJobs = require('./utils/cron_jobs')
 const stripe = require('./config/stripe')
 const logger = require('./logger/logger')
 const asyncErrorHandler = require('../middlewares/error_handler/async_errors')
@@ -35,7 +36,7 @@ container.register({
   readerSequelize: asValue(readerSequelize),
 
   logger: asValue(logger),
-
+  cronJobs: asFunction(cronJobs).singleton(),
   asyncErrorHandler: asValue(asyncErrorHandler),
   CustomError: asValue(CustomError),
   ERRORS: asValue(ERRORS),

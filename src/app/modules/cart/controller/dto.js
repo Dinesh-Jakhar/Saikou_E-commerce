@@ -2,7 +2,7 @@ const joi = require('joi')
 
 const addToCart = joi.object({
   productId: joi.string().uuid().required(),
-  quantity: joi.number().integer().positive().required(),
+  quantity: joi.number().integer().required(),
 })
 const updateProductCount = joi.object({
   productId: joi.number().integer().required(),

@@ -6,7 +6,7 @@ const cartService = ({
   HTTP_ERRORS,
   writerSequelize,
 }) => ({
-  addToCart: async (productId, quantity, userId) => {
+  addToCart: async (productId, count, userId) => {
     const transaction = await writerSequelize.transaction()
     try {
       const productInventory = await cartRepository.getProductInventory(
@@ -20,26 +20,72 @@ const cartService = ({
         })
       }
       const availableStock = productInventory.inventory?.quantity
-      if (availableStock < quantity) {
+      if (availableStock == null) {
         throw new CustomError({
-          ...HTTP_ERRORS.BAD_REQUEST,
-          errors: 'Insufficient stock',
+          ...HTTP_ERRORS.INTERNAL_SERVER_ERROR,
+          errors: 'Inventory information is unavailable',
         })
       }
+
       const session = await cartRepository.getOrCreateSession(
         userId,
         transaction
       )
-      const cartItem = await cartRepository.addCartItem(
-        session.id,
-        productId,
-        quantity,
-        availableStock,
+      const cart_item = await cartRepository.cart_item(
         userId,
+        productId,
+        session.id,
         transaction
       )
-      await transaction.commit()
-      return cartItem
+      if (!cart_item || cart_item.length == 0) {
+        if (availableStock < count) {
+          throw new CustomError({
+            ...HTTP_ERRORS.BAD_REQUEST,
+            errors: 'Insufficient stock',
+          })
+        }
+        const cartItem = await cartRepository.addCartItem(
+          session.id,
+          productId,
+          count,
+          availableStock,
+          userId,
+          transaction
+        )
+        await transaction.commit()
+        return cartItem
+      } else {
+        const cart_item = await cartRepository.cart_item(
+          userId,
+          productId,
+          session.id,
+          transaction
+        )
+        if (!cart_item) {
+          throw new CustomError({
+            ...HTTP_ERRORS.BAD_REQUEST,
+            errors: 'No Such Cart Exists with the given Product',
+          })
+        }
+
+        const totalCount = cart_item.quantity + count
+        if (totalCount < 0 || totalCount > availableStock) {
+          throw new CustomError({
+            ...HTTP_ERRORS.BAD_REQUEST,
+            errors: 'Insufficient stock',
+          })
+        } else if (totalCount == 0) {
+          cart_item.quantity = 0 //Can automatically delete //TODO
+          await cart_item.destroy({ transaction })
+          await transaction.commit()
+          return 'Item Removed Successfully'
+        } else {
+          cart_item.quantity = totalCount
+          await cart_item.save({ transaction })
+          await transaction.commit()
+          return 'Product added successfully'
+        }
+      }
     } catch (error) {
       await transaction.rollback()
       throw error
