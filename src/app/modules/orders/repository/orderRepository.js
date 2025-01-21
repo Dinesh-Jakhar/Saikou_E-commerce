@@ -68,6 +68,8 @@ const orderRepository = ({
       const orderDetailModel = await writerDatabase('OrderDetail')
       const OrderItemModel = await writerDatabase('OrderItem')
       const fulfillmentOrderModel = await writerDatabase('FulfillmentShipment')
+      const addressModel = await writerDatabase('Address') // Fetch address model
+      const orderAddressModel = await writerDatabase('OrderAddress') // Fetch OrderAddress model
 
       const lastOrder = await orderDetailModel.findOne({
         order: [['createdAt', 'DESC']],
@@ -79,12 +81,22 @@ const orderRepository = ({
 
       const orderId = `#ORDER-${String(lastOrderNumber).padStart(4, '0')}`
 
+      const address = await addressModel.findOne({
+        where: { id: addressId },
+        transaction,
+      })
+      if (!address) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'Address ID not found',
+        })
+      }
       const orderDetail = await orderDetailModel.create(
         {
           id: orderId,
           userId: userId,
           total: totalAmount,
-          addressId: addressId,
+          // addressId: addressId,
           order_status: 'pending',
         },
         {
@@ -107,8 +119,114 @@ const orderRepository = ({
           transaction,
         }
       )
+      await orderAddressModel.create(
+        {
+          orderId: orderDetail.id,
+          name: address.name,
+          addressLine1: address.addressLine1,
+          addressLine2: address.addressLine2,
+          city: address.city,
+          districtOrCounty: address.districtOrCounty,
+          stateOrRegion: address.stateOrRegion,
+          postalCode: address.postalCode,
+          countryCode: address.countryCode,
+          phone: address.phone,
+        },
+        {
+          transaction,
+        }
+      )
 
       return orderDetail
+    } catch (error) {
+      throw error
+    }
+  },
+  getMyOrders: async (userId) => {
+    try {
+      const orderDetailModel = await writerDatabase('OrderDetail')
+      const paymentDetailsModel = await writerDatabase('PaymentDetails')
+      const orderItemModel = await writerDatabase('OrderItem')
+      const productModel = await writerDatabase('Product')
+      const orderAddressModel = await writerDatabase('OrderAddress')
+      const fulfillmentShipmentModel = await writerDatabase(
+        'FulfillmentShipment'
+      )
+      const orders = await orderDetailModel.findAll({
+        where: {
+          userId,
+          order_status: ['pendingAmazon', 'onAmazon'], // Filter by order_status
+        },
+        include: [
+          {
+            model: paymentDetailsModel,
+            as: 'paymentDetails',
+            where: { status: 'succeeded' }, // Only orders with succeeded payment
+            attributes: ['amount'],
+          },
+          {
+            model: orderItemModel,
+            as: 'orderItems',
+            attributes: ['quantity', 'orderItemAmount', 'productId'],
+            include: [
+              {
+                model: productModel,
+                as: 'product', // Assuming the alias is 'product' for OrderItem -> Product relation
+                attributes: ['name', 'imageUrls'], // Fetch product name and image
+              },
+            ],
+          },
+          {
+            model: orderAddressModel,
+            as: 'orderAddress',
+            attributes: [
+              'name',
+              'addressLine1',
+              'addressLine2',
+              'city',
+              'stateOrRegion',
+              'districtOrCounty',
+              'postalCode',
+              'countryCode',
+              'phone',
+            ],
+          },
+          {
+            model: fulfillmentShipmentModel,
+            as: 'fulfillmentShipments',
+            attributes: [
+              'carrierCode',
+              'trackingNumber',
+              'orderCurrentStatus',
+              'estimatedArrivalDate',
+            ],
+          },
+        ],
+        attributes: [
+          'id',
+          'createdAt',
+          'total',
+          'order_status',
+          'fulfillmentOrderStatus',
+        ], // Attributes from OrderDetail
+      })
+
+      // Format the result for better readability
+      return orders.map((order) => ({
+        orderId: order.id,
+        createdAt: order.createdAt,
+        totalAmount: order.total,
+        orderCompletionStatus: order.order_status,
+        fulfillmentOrderStatus: order.fulfillmentOrderStatus,
+        payment: order.paymentDetails,
+        deliveryAddress: order.orderAddress,
+        items: order.orderItems.map((item) => ({
+          quantity: item.quantity,
+          orderItemAmount: item.orderItemAmount,
+          product: item.product,
+        })),
+        shipments: order.fulfillmentShipments,
+      }))
     } catch (error) {
       throw error
     }

@@ -14,13 +14,13 @@ const fetchOrderDetailsForFulfillment = async (orderId, userId) => {
   try {
     const orderDetailModel = await writerDatabase('OrderDetail')
     const orderItemModel = await writerDatabase('OrderItem')
-    const userAddressModel = await readerDatabase('Address')
+    const userAddressModel = await writerDatabase('OrderAddress')
     const orderDetail = await orderDetailModel.findOne({
       where: { id: orderId, userId },
       include: [
         {
           model: userAddressModel,
-          as: 'address',
+          as: 'orderAddress',
           attributes: [
             'name',
             'addressLine1',
@@ -52,7 +52,7 @@ const fetchOrderDetailsForFulfillment = async (orderId, userId) => {
         errors: `Order with ID ${orderId} for user ${userId} not found`,
       })
     }
-    if (!orderDetail.address) {
+    if (!orderDetail.orderAddress) {
       throw new CustomError({
         ...HTTP_ERRORS.INTERNAL_SERVER_ERROR,
         errors: `Address for Order ID ${orderId} not found`,
@@ -72,7 +72,7 @@ const fetchOrderDetailsForFulfillment = async (orderId, userId) => {
       // userId: orderDetail.userId,
       displayableOrderId: orderDetail.id,
       displayableOrderDate: orderDetail.createdAt,
-      address: orderDetail.address,
+      address: orderDetail.orderAddress,
       items: orderDetail.orderItems.map((item) => ({
         sellerSku: item.sellerSku,
         quantity: item.quantity,
@@ -91,7 +91,7 @@ const updatedOrderDetail = async (orderId, status) => {
     const OrderDetail = await writerDatabase('OrderDetail')
     const updatedOrder = await OrderDetail.update(
       { order_status: status },
-      { where: { id: orderId } }
+      { where: { id: orderId } } //Can also do like fulfillmentORderStatus as Received
     )
     return updatedOrder
   } catch (error) {

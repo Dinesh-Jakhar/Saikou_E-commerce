@@ -16,14 +16,14 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
-      addressId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: 'Address',
-          key: 'id',
-        },
-      },
+      // addressId: {
+      //   type: DataTypes.UUID,
+      //   allowNull: false,
+      //   references: {
+      //     model: 'Address',
+      //     key: 'id',
+      //   },
+      // },
       total: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
@@ -40,8 +40,8 @@ module.exports = (sequelize, DataTypes) => {
           'Unfulfillable',
           'Invalid'
         ), //Pending is any other status
-        allowNull: false,
-        defaultValue: 'Received',
+        allowNull: true,
+        // defaultValue: 'Received',
       },
       order_status: {
         type: DataTypes.ENUM,
@@ -49,9 +49,9 @@ module.exports = (sequelize, DataTypes) => {
           'pending',
           'pendingAmazon',
           'onAmazon',
-          'return_requested',
-          'returned',
-          'return_failed',
+          // 'return_requested',
+          // 'returned',
+          // 'return_failed',
         ],
         defaultValue: 'pending',
         allowNull: false,
@@ -97,13 +97,21 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'orderId',
       as: 'orderItems',
     })
-    OrderDetail.belongsTo(models.Address, {
-      foreignKey: 'addressId',
-      as: 'address',
-    })
+    // OrderDetail.belongsTo(models.Address, {
+    //   foreignKey: 'addressId',
+    //   as: 'address',
+    // })
     OrderDetail.hasOne(models.PaymentDetails, {
       foreignKey: 'orderId',
       as: 'paymentDetails',
+    })
+    OrderDetail.hasOne(models.OrderAddress, {
+      foreignKey: 'orderId',
+      as: 'orderAddress',
+    })
+    OrderDetail.hasOne(models.FulfillmentShipment, {
+      foreignKey: 'orderId',
+      as: 'fulfillmentShipments',
     })
   }
 

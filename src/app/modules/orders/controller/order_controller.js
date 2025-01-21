@@ -42,7 +42,17 @@ module.exports = ({
       return res.status(400).send(`Webhook Error: ${error.message}`)
     }
   },
-
+  getMyOrders: async (req, res, next) => {
+    try {
+      const userId = req.user.id
+      const myOrders = await orderService.getMyOrders(userId)
+      return res.status(200).json({
+        myOrders,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
   updateOrderStatus: async (paymentIntentId, status) => {
     // Update the order status in the database based on the payment status
     try {

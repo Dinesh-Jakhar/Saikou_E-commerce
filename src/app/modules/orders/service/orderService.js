@@ -150,6 +150,14 @@ const orderService = ({
       throw err
     }
   },
+  getMyOrders: async (userId) => {
+    try {
+      const orders = await orderRepository.getMyOrders(userId)
+      return orders
+    } catch (error) {
+      throw error
+    }
+  },
   handlePaymentSucceeded: async function (event) {
     try {
       const paymentIntent = event.data.object

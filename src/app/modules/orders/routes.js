@@ -7,18 +7,21 @@ const authenticateJWT = require('../../../middlewares/jwt/jwt_authentication')
 const express = require('express')
 
 const order = createController(order_controller)
-  .prefix('/checkout')
-  .post('/', 'checkOutTheOrder', {
+  .prefix('/')
+  .post('checkout', 'checkOutTheOrder', {
     before: [
       authenticateJWT,
       // , payloadValidationMiddleware(dto.checkout)
     ],
   })
-  .get('/allOrders', 'getAllOrders', {
+  .get('allOrders', 'getAllOrders', {
     before: [authenticateJWT, authorize('admin')],
   })
-// .post('/stripe-webhook','myStripeWebhook',{
-//   before:[express.raw({ type: 'application/json' })]}
-// )
+  //.post('/stripe-webhook','myStripeWebhook',{
+  //   before:[express.raw({ type: 'application/json' })]}
+  // )
+  .get('getOrder', 'getMyOrders', {
+    before: [authenticateJWT],
+  })
 
 module.exports = order
