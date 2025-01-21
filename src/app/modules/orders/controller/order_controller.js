@@ -68,7 +68,7 @@ module.exports = ({
   },
   getAllOrders: async (req, res, next) => {
     try {
-      const orders = await SellingPartner.listAllFulfillmentOrders()
+      const orders = await orderService.listAllFulfillmentOrdersFromDB()
 
       return res.status(200).json({
         success: true,

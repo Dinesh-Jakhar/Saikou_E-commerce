@@ -1,6 +1,6 @@
 const express = require('express')
 const app = express()
-
+const path = require('path')
 const {
   initializeDatabase,
   closeDbConnections,
@@ -8,6 +8,7 @@ const {
 const cors = require('../middlewares/cors/cors')
 const config = require('./../app/config/config')
 const error_handler = require('../middlewares/error_handler/error_handler')
+// const authenticateJWT = require('../middlewares/jwt/jwt_authentication')
 const { logger, errorLogger } = require('../middlewares/logger/http_logger')(
   'logger'
 )
@@ -20,6 +21,7 @@ module.exports = () => {
   // middlewares
   app.use(cors())
   app.use(logger)
+  app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
   app.use(router)
   app.use(errorLogger)
   app.use(error_handler)

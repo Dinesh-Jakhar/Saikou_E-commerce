@@ -150,6 +150,13 @@ const orderService = ({
       throw err
     }
   },
+  listAllFulfillmentOrdersFromDB: async () => {
+    try {
+      return await orderRepository.listAllFulfillmentOrdersFromDB()
+    } catch (error) {
+      throw error
+    }
+  },
   getMyOrders: async (userId) => {
     try {
       const orders = await orderRepository.getMyOrders(userId)

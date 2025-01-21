@@ -2,8 +2,7 @@ const productService = ({
   productRepository,
   CustomError,
   HTTP_ERRORS,
-  ERRORS,
-  configs,
+  fs,
 }) => ({
   allProductsRoleWise: async function () {
     const allProds = await productRepository.allProducts()
@@ -133,6 +132,11 @@ const productService = ({
     discountId,
     unitsInStock,
     imageUrls,
+    // mainImage,
+    // descImages,
+    sellerSku,
+    fnSku,
+    asin,
   }) => {
     try {
       const product = await productRepository.addNewProduct(
@@ -141,7 +145,10 @@ const productService = ({
         price,
         discountId,
         unitsInStock,
-        imageUrls
+        imageUrls,
+        sellerSku,
+        fnSku,
+        asin
       )
       return product
     } catch (error) {

@@ -38,6 +38,7 @@ module.exports = () => {
   })
 
   const router = Router()
+
   // using container as middleware
   router.use(scopePerRequest(appContainer))
   router.use(`/api/v1`, apiRouter)

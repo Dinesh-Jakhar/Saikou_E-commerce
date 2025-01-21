@@ -22,7 +22,7 @@ const product = createController(product_controller)
   .post('/addNew', 'addNewProduct', {
     before: [
       authenticateJWT,
-      // authorize('admin'),
+      authorize('admin'),
       uploadMultipleImages,
       payloadValidationMiddleware(dto.addProduct),
     ],

@@ -144,12 +144,12 @@ const orderRepository = ({
   },
   getMyOrders: async (userId) => {
     try {
-      const orderDetailModel = await writerDatabase('OrderDetail')
-      const paymentDetailsModel = await writerDatabase('PaymentDetails')
-      const orderItemModel = await writerDatabase('OrderItem')
-      const productModel = await writerDatabase('Product')
-      const orderAddressModel = await writerDatabase('OrderAddress')
-      const fulfillmentShipmentModel = await writerDatabase(
+      const orderDetailModel = await readerDatabase('OrderDetail')
+      const paymentDetailsModel = await readerDatabase('PaymentDetails')
+      const orderItemModel = await readerDatabase('OrderItem')
+      const productModel = await readerDatabase('Product')
+      const orderAddressModel = await readerDatabase('OrderAddress')
+      const fulfillmentShipmentModel = await readerDatabase(
         'FulfillmentShipment'
       )
       const orders = await orderDetailModel.findAll({
@@ -218,6 +218,109 @@ const orderRepository = ({
         totalAmount: order.total,
         orderCompletionStatus: order.order_status,
         fulfillmentOrderStatus: order.fulfillmentOrderStatus,
+        payment: order.paymentDetails,
+        deliveryAddress: order.orderAddress,
+        items: order.orderItems.map((item) => ({
+          quantity: item.quantity,
+          orderItemAmount: item.orderItemAmount,
+          product: item.product,
+        })),
+        shipments: order.fulfillmentShipments,
+      }))
+    } catch (error) {
+      throw error
+    }
+  },
+  listAllFulfillmentOrdersFromDB: async () => {
+    try {
+      const orderDetailModel = await readerDatabase('OrderDetail')
+      const paymentDetailsModel = await readerDatabase('PaymentDetails')
+      const orderItemModel = await readerDatabase('OrderItem')
+      const productModel = await readerDatabase('Product')
+      const orderAddressModel = await readerDatabase('OrderAddress')
+      const userModel = await readerDatabase('User')
+      const fulfillmentShipmentModel = await readerDatabase(
+        'FulfillmentShipment'
+      )
+      const orders = await orderDetailModel.findAll({
+        where: {
+          order_status: ['pendingAmazon', 'onAmazon'], // Filter by order_status
+        },
+        include: [
+          {
+            model: userModel,
+            as: 'user',
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
+          {
+            model: paymentDetailsModel,
+            as: 'paymentDetails',
+            where: { status: 'succeeded' }, // Only orders with succeeded payment
+            attributes: ['amount', 'paymentConfirmationTimestamp'],
+          },
+          {
+            model: orderItemModel,
+            as: 'orderItems',
+            attributes: ['quantity', 'orderItemAmount', 'productId'],
+            include: [
+              {
+                model: productModel,
+                as: 'product', // Assuming the alias is 'product' for OrderItem -> Product relation
+                attributes: ['name', 'imageUrls'], // Fetch product name and image
+              },
+            ],
+          },
+          {
+            model: orderAddressModel,
+            as: 'orderAddress',
+            attributes: [
+              'name',
+              'addressLine1',
+              'addressLine2',
+              'city',
+              'stateOrRegion',
+              'districtOrCounty',
+              'postalCode',
+              'countryCode',
+              'phone',
+            ],
+          },
+          {
+            model: fulfillmentShipmentModel,
+            as: 'fulfillmentShipments',
+            attributes: [
+              'carrierCode',
+              'trackingNumber',
+              'orderCurrentStatus',
+              'fulfillmentShipmentStatus',
+              'estimatedArrivalDate',
+            ],
+          },
+        ],
+        attributes: [
+          'id',
+          'createdAt',
+          'total',
+          'order_status',
+          'fulfillmentOrderStatus',
+        ], // Attributes from OrderDetail
+      })
+      // Format the result for better readability
+      return orders.map((order) => ({
+        orderId: order.id,
+        createdAt: order.createdAt,
+        totalAmount: order.total,
+        orderCompletionStatus: order.order_status,
+        fulfillmentOrderStatus: order.fulfillmentOrderStatus,
+        user: order.user
+          ? {
+              id: order.user.id,
+              name: `${order.user.firstName} ${order.user.lastName || ''}`.trim(),
+              email: order.user.email,
+              // If phoneNumber is not in the User model, remove this field or update the model.
+              // phoneNumber: order.user.phoneNumber || null,
+            }
+          : null,
         payment: order.paymentDetails,
         deliveryAddress: order.orderAddress,
         items: order.orderItems.map((item) => ({

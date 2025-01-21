@@ -8,6 +8,15 @@ const addProduct = joi.object({
   mainImage: joi.any().optional(),
   descImages: joi.any().optional(),
   unitsInStock: joi.number().integer().min(0).required(),
+  sellerSku: joi.string().required(),
+  fnSku: joi.string().optional(),
+  asin: joi.string().optional(),
+  files: joi
+    .object({
+      mainImage: joi.array().items(joi.string()).optional(), // Array of filenames for mainImage
+      descImages: joi.array().items(joi.string()).optional(), // Array of filenames for descImages
+    })
+    .optional(),
 })
 const updateProduct = joi.object({
   id: joi.string().guid({ version: 'uuidv4' }).required(),

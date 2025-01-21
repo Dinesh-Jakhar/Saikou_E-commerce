@@ -1,5 +1,3 @@
-const { v4: uuidv4 } = require('uuid')
-
 module.exports = ({ productService, CustomError }) => ({
   allProducts: async (req, res, next) => {
     try {
@@ -24,18 +22,30 @@ module.exports = ({ productService, CustomError }) => ({
   },
   addNewProduct: async (req, res, next) => {
     try {
-      const { name, desc, price, discountId, unitsInStock } = req.body
-      const mainImage = req.files?.mainImage?.[0]?.filename || null
-      const descImages =
-        req.files?.descImages?.map((file) => file.filename) || []
+      const {
+        name,
+        desc,
+        price,
+        discountId,
+        unitsInStock,
+        sellerSku,
+        fnSku,
+        asin,
+      } = req.body
+      // const mainImage = req.files?.mainImage?.[0];
+      // const descImages = req.files?.descImages || [];
+      const all_files = req.body.files || {}
+      const mainImageFile = all_files.mainImage?.[0] || null
+      const descImageFiles = all_files.descImages || []
 
-      // Construct relative paths with the generated productId
-      const mainImagePath = mainImage
-        ? `/uploads/products/${name}/${mainImage}`
+      const mainImagePath = mainImageFile
+        ? `/uploads/products/${mainImageFile}`
         : null
-      const descImagesPaths = descImages.map(
-        (file) => `/uploads/products/${name}/${file}`
+      const descImagePaths = descImageFiles.map(
+        (filename) => `/uploads/products/${filename}`
       )
+
+      const imageUrls = [mainImagePath, ...descImagePaths]
 
       if (discountId) {
         const discountExists = await productService.discountExists(discountId)
@@ -53,7 +63,12 @@ module.exports = ({ productService, CustomError }) => ({
         price,
         discountId,
         unitsInStock,
-        imageUrls: [mainImagePath, ...descImagesPaths],
+        imageUrls,
+        // mainImage,
+        // descImages,
+        sellerSku,
+        fnSku,
+        asin,
       })
       return res.status(201).json({
         message: 'Product Created Successfully',

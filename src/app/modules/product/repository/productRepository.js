@@ -175,7 +175,10 @@ const productRepository = ({ writerDatabase, readerDatabase }) => ({
     price,
     discountId,
     unitsInStock,
-    imageUrls
+    imageUrls,
+    sellerSku,
+    fnSku,
+    asin
   ) => {
     try {
       const productModel = await writerDatabase('Product')
@@ -187,6 +190,9 @@ const productRepository = ({ writerDatabase, readerDatabase }) => ({
         discountId,
         unitsInStock,
         imageUrls,
+        sellerSku,
+        fnSku,
+        asin,
       })
       await inventoryModel.create({
         productId: product.id,
