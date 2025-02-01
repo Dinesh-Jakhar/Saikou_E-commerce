@@ -10,8 +10,10 @@ const {
   updateFulfillmentShipmentTable,
   updateFulfillmentDeliveryStatus,
   getAllOrdersWithPendingDelivery,
+  getPendingPaymentsFromDB,
 } = require('./requiredFunctions')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const { cancelPaymentIntent } = require('../config/stripe')
 
 module.exports = ({
   //   writerSequelize,
@@ -40,6 +42,11 @@ module.exports = ({
         await sleep(2000)
         console.log('update the delivery status CRON started')
         await this.updateDeliveryStatus()
+      })
+      cron.schedule('0 */2 * * *', async () => {
+        await sleep(1000)
+        console.log('Canceling the payment intent')
+        await this.cancelExpiredPayment()
       })
     } catch (error) {
       logger.error('Cron Job Error')
@@ -174,6 +181,32 @@ module.exports = ({
     } catch (error) {
       console.log(error)
       logger.error('Cron Job Error in updateDelivery Status')
+    }
+  },
+  cancelExpiredPayment: async function () {
+    try {
+      const EXPIRATION_TIME = 10 * 60 * 1000
+      const now = Date.now()
+      const pendingPayments = await getPendingPaymentsFromDB()
+      if (pendingPayments && pendingPayments.length > 0) {
+        for (const payment of pendingPayments) {
+          const paymentAge = now - payment.createdAt
+          if (paymentAge > EXPIRATION_TIME) {
+            try {
+              const payment_intent_id = payment.paymentId
+              await cancelPaymentIntent(payment_intent_id)
+            } catch (error) {
+              console.error(
+                `Error canceling Payment Intent ${payment.payment_intent_id}:`,
+                error
+              )
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log(error)
+      logger.error('Cron Job Error in cancelExpiredPayment')
     }
   },
 })

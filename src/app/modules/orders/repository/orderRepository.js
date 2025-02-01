@@ -4,12 +4,13 @@ const orderRepository = ({
   CustomError,
   HTTP_ERRORS,
 }) => ({
-  checkForValidSessionId: async (sessionId) => {
+  checkForValidSessionId: async (sessionId, userId) => {
     try {
       const sessionModel = await readerDatabase('ShoppingSession')
       const session = await sessionModel.findOne({
         where: {
           id: sessionId,
+          userId,
           status: 'active',
         },
       })
@@ -73,6 +74,7 @@ const orderRepository = ({
 
       const lastOrder = await orderDetailModel.findOne({
         order: [['createdAt', 'DESC']],
+        paranoid: false,
         transaction,
       })
       const lastOrderNumber = lastOrder
@@ -376,6 +378,16 @@ const orderRepository = ({
     try {
       const OrderDetailTable = await writerDatabase('OrderDetail')
       const OrderItemsTable = await writerDatabase('OrderItem')
+      const FulfillmentShipmentTable = await writerDatabase(
+        'FulfillmentShipment'
+      )
+      const OrderAddressTable = await writerDatabase('OrderAddress')
+      await OrderAddressTable.destroy({
+        where: { orderId },
+      })
+      await FulfillmentShipmentTable.destroy({
+        where: { orderId },
+      })
       await OrderItemsTable.destroy({
         where: { orderId: orderId },
       })
@@ -383,6 +395,55 @@ const orderRepository = ({
         where: { id: orderId },
       })
       return 'updated_Successful'
+    } catch (error) {
+      throw error
+    }
+  },
+  updatePaymentStatus: async (paymentIntentId, status, payment_method) => {
+    try {
+      const paymentDetailsModel = await writerDatabase('PaymentDetails')
+      const Payments = await paymentDetailsModel.update(
+        {
+          status: status,
+          paymentMethod: payment_method,
+        },
+        {
+          where: { paymentId: paymentIntentId },
+        }
+      )
+      return Payments
+    } catch (error) {
+      throw error
+    }
+  },
+  updateInventoryForCanceledPayments: async (orderId) => {
+    try {
+      const OrderDetail = await readerDatabase('OrderDetail')
+      const OrderItem = await readerDatabase('OrderItem')
+      const Inventory = await writerDatabase('Inventory')
+
+      const order = await OrderDetail.findOne({
+        where: { id: orderId },
+        include: [{ model: OrderItem, as: 'orderItems', paranoid: false }],
+        paranoid: false,
+      })
+      if (!order) {
+        console.log(`No failed order found with ID: ${orderId}`)
+        return
+      }
+      for (const item of order.orderItems) {
+        const inventoryRecord = await Inventory.findOne({
+          where: { productId: item.productId },
+        })
+        if (inventoryRecord) {
+          inventoryRecord.quantity += item.quantity
+          await inventoryRecord.save()
+        } else {
+          console.error(
+            `Inventory record not found for Product ID: ${item.productId}`
+          )
+        }
+      }
     } catch (error) {
       throw error
     }

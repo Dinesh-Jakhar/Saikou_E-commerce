@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
           'succeeded',
           'failed',
           'pending',
-          'partially_received',
+          // 'partially_received',
           'canceled'
         ),
         allowNull: false,
@@ -74,6 +74,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: 'PaymentDetails',
       timestamps: true,
+      paranoid: true,
     }
   )
 

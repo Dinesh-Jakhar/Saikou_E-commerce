@@ -10,7 +10,10 @@ module.exports = ({
       const userId = req.user.id
       const { sessionId, addressId } = req.body
       //check if valid session_id
-      const isValid = await orderService.checkForValidSessionId(sessionId)
+      const isValid = await orderService.checkForValidSessionId(
+        sessionId,
+        userId
+      )
       if (!isValid) {
         throw new CustomError({
           ...HTTP_ERRORS.BAD_REQUEST,

@@ -64,10 +64,15 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
     },
     {
       tableName: 'FulfillmentShipment',
       timestamps: true,
+      paranoid: true,
     }
   )
 

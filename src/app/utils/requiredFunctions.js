@@ -227,7 +227,7 @@ const updateFulfillmentDeliveryStatus = async (
       : 'OTHER'
 
     // Update the FulfillmentShipment table
-    const FulfillmentShipment = await writerDatabase('FulfillmentShipment')
+    const FulfillmentShipment = await readerDatabase('FulfillmentShipment')
     await FulfillmentShipment.update(
       {
         orderCurrentStatus: deliveryStatus,
@@ -245,6 +245,21 @@ const updateFulfillmentDeliveryStatus = async (
   }
 }
 
+const getPendingPaymentsFromDB = async () => {
+  try {
+    const paymentDetailsModel = await writerDatabase('PaymentDetails')
+    const Payments = await paymentDetailsModel.findAll({
+      where: {
+        status: 'pending',
+      },
+    })
+    return Payments
+  } catch (error) {
+    console.error('(CRON)Error updating fetching failed payments')
+    throw error
+  }
+}
+
 module.exports = {
   fetchOrderDetailsForFulfillment,
   updatedOrderDetail,
@@ -253,4 +268,5 @@ module.exports = {
   updateFulfillmentShipmentTable,
   getAllOrdersWithPendingDelivery,
   updateFulfillmentDeliveryStatus,
+  getPendingPaymentsFromDB,
 }

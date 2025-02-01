@@ -46,6 +46,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.16",
     "razorpay": "2.9.4",
+    "redis": "^4.7.0",
     "sequelize": "6.37.3",
     "stripe": "^17.4.0",
     "winston": "3.13.0"

@@ -63,20 +63,17 @@ const productService = ({
 
     return products.map((product) => {
       const { dataValues } = product
-
       const discountPercent = dataValues.discounts
         ? parseFloat(dataValues.discounts.dataValues.discount_percent)
         : 0
       const actualPrice =
         parseFloat(dataValues.price) -
         (parseFloat(dataValues.price) * discountPercent) / 100
-
       const stockStatus =
-        dataValues.inventory.dataValues.quantity > 0
+        dataValues.inventory?.dataValues.quantity > 0
           ? 'In Stock'
           : 'Out of Stock'
       const saleStatus = discountPercent > 0 ? 'Sale' : 'No Sale'
-
       return {
         id: dataValues.id,
         name: dataValues.name,

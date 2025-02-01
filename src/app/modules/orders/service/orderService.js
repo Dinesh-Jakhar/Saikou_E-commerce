@@ -7,9 +7,9 @@ const orderService = ({
   emailService,
   queues,
 }) => ({
-  checkForValidSessionId: async (sessionId) => {
+  checkForValidSessionId: async (sessionId, userId) => {
     try {
-      return await orderRepository.checkForValidSessionId(sessionId)
+      return await orderRepository.checkForValidSessionId(sessionId, userId)
     } catch (error) {
       throw error
     }
@@ -139,6 +139,10 @@ const orderService = ({
           // await updateOrderStatus(requiresActionPaymentIntent.id, 'requires_action');
           break
 
+        case 'payment_intent.canceled':
+          await this.handlePaymentCanceled(event)
+          break
+
         default:
           console.log(`Unhandled event type: ${event.type}`)
       }
@@ -162,6 +166,37 @@ const orderService = ({
       const orders = await orderRepository.getMyOrders(userId)
       return orders
     } catch (error) {
+      throw error
+    }
+  },
+  handlePaymentCanceled: async function (event) {
+    try {
+      const paymentIntent = event.data.object
+
+      const paymentId = paymentIntent.id
+      const payment_method = null
+      await orderRepository.updatePaymentStatus(
+        paymentId,
+        'canceled',
+        payment_method
+      )
+      const orderId = paymentIntent.metadata.user_order_id
+      await orderRepository.softDeleteOrder(orderId)
+      await orderRepository.updateInventoryForCanceledPayments(orderId)
+
+      //await orderRepository.updatedOrderDetail(orderId, 'failed');
+
+      // Send failure notification email to user
+      // const userAccount = await orderRepository.checkIfExistsByID(userId)
+      // const emailTitle = 'Payment Canceled'
+      // const emailBody = `<p><strong>Sorry!</strong> Your payment was Canceled. Please try again.</p><p>Reason: ${failureMessage}</p>`
+      // await queues.addEmailToQueue(
+      //   paymentIntent.metadata.user_email,
+      //   emailTitle,
+      //   emailBody
+      // )
+    } catch (error) {
+      console.error('Error Cancelling payment:', error)
       throw error
     }
   },

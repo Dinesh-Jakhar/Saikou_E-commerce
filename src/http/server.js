@@ -12,7 +12,7 @@ const error_handler = require('../middlewares/error_handler/error_handler')
 const { logger, errorLogger } = require('../middlewares/logger/http_logger')(
   'logger'
 )
-
+const { setStopServerFunction } = require('../app/config/queues')
 module.exports = () => {
   const router = require('./router')('router')
 
@@ -33,7 +33,6 @@ module.exports = () => {
         console.log(`Application started at port: ${port}`)
         resolve(http)
       })
-
       http.keepAliveTimeout = 100000
       http.headersTimeout = 12000
 
@@ -46,8 +45,10 @@ module.exports = () => {
   const stopServer = async () => {
     console.log('Stopping server !!! ')
     await closeDbConnections()
+    await setStopServerFunction()
     process.exit(0)
   }
+  setStopServerFunction(stopServer)
 
   return {
     app,

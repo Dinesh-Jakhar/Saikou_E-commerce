@@ -14,6 +14,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
+        validate: {
+          min: 0, // Prevents negative values
+        },
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -30,6 +33,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       tableName: 'Inventory',
+      paranoid: true,
     }
   )
 
