@@ -1,4 +1,4 @@
-module.exports = ({ productService, CustomError }) => ({
+module.exports = ({ productService, CustomError, configs }) => ({
   allProducts: async (req, res, next) => {
     try {
       const allProds = await productService.allProductsRoleWise()
@@ -39,10 +39,10 @@ module.exports = ({ productService, CustomError }) => ({
       const descImageFiles = all_files.descImages || []
 
       const mainImagePath = mainImageFile
-        ? `/uploads/products/${mainImageFile}`
+        ? `${configs.SERVER_IMAGE_URL}/uploads/products/${mainImageFile}`
         : null
       const descImagePaths = descImageFiles.map(
-        (filename) => `/uploads/products/${filename}`
+        (filename) => `${configs.SERVER_IMAGE_URL}/uploads/products/${filename}`
       )
 
       const imageUrls = [mainImagePath, ...descImagePaths]

@@ -14,6 +14,11 @@ const createTransporter = () => {
       user: config.MAIL_USER,
       pass: config.MAIL_PASS,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    // debug: true,
+    // logger: true
   })
 }
 

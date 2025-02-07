@@ -36,6 +36,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 1,
+        validate: {
+          min: 0,
+        },
       },
       createdAt: {
         type: DataTypes.DATE,

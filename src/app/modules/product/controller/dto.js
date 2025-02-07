@@ -7,7 +7,7 @@ const addProduct = joi.object({
   discountId: joi.number().integer().positive().optional(),
   mainImage: joi.any().optional(),
   descImages: joi.any().optional(),
-  unitsInStock: joi.number().integer().min(0).required(),
+  unitsInStock: joi.number().integer().min(10).required(),
   sellerSku: joi.string().required(),
   fnSku: joi.string().optional(),
   asin: joi.string().optional(),

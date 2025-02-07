@@ -215,6 +215,51 @@ const registrationService = ({
       throw error
     }
   },
+  add_an_address: async (
+    userId,
+    name,
+    addressLine1,
+    addressLine2,
+    city,
+    districtOrCounty,
+    stateOrRegion,
+    postalCode,
+    countryCode,
+    phone,
+    address_type
+  ) => {
+    try {
+      return await registrationRepository.add_an_address(
+        userId,
+        name,
+        addressLine1,
+        addressLine2,
+        city,
+        districtOrCounty,
+        stateOrRegion,
+        postalCode,
+        countryCode,
+        phone,
+        address_type
+      )
+    } catch (error) {
+      throw error
+    }
+  },
+  get_All_address: async (userId) => {
+    try {
+      return await registrationRepository.get_All_address(userId)
+    } catch (error) {
+      throw error
+    }
+  },
+  deleteAddress: async (userId, addressId) => {
+    try {
+      return await registrationRepository.deleteAddress(userId, addressId)
+    } catch (error) {
+      throw error
+    }
+  },
 })
 
 module.exports = registrationService

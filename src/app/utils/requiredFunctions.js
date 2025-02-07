@@ -9,6 +9,50 @@ const { Op } = require('sequelize')
 const CustomError = require('../../middlewares/error_handler/CustomError')
 //   const ERRORS = require('../../middlewares/error_handler/errors/errors')
 const HTTP_ERRORS = require('../../middlewares/error_handler/errors/http_errors')
+// const jwtHelper =require('../../middlewares/jwt/jwt_helper')
+const jwt = require('jsonwebtoken')
+const configs = require('../config/config')
+
+const signUpWithGoogle = async (email, firstName, lastName, password) => {
+  try {
+    const userModel = await writerDatabase('User')
+    const user = await userModel.findOne({ where: { email } })
+
+    if (!user) {
+      user = await userModel.create({
+        firstName,
+        lastName,
+        email,
+        password,
+        role: 'user',
+      })
+    }
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      configs.JWT_SECRET,
+      {
+        expiresIn: '4h',
+      }
+    )
+    //create token
+    // const token = jwtHelper.generateToken({ id: user.id, email: user.email, role: user.role });
+    return {
+      token: token,
+      account: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+      },
+    }
+  } catch (error) {
+    console.log('SIGN_UP_WITH_GOOGLE_ERROR')
+    throw error
+  }
+}
 
 const fetchOrderDetailsForFulfillment = async (orderId, userId) => {
   try {
@@ -269,4 +313,5 @@ module.exports = {
   getAllOrdersWithPendingDelivery,
   updateFulfillmentDeliveryStatus,
   getPendingPaymentsFromDB,
+  signUpWithGoogle,
 }

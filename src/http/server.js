@@ -12,6 +12,8 @@ const error_handler = require('../middlewares/error_handler/error_handler')
 const { logger, errorLogger } = require('../middlewares/logger/http_logger')(
   'logger'
 )
+const passport = require('passport') // ✅ Import Passport.js
+require('../app/config/passport-config')
 const { setStopServerFunction } = require('../app/config/queues')
 module.exports = () => {
   const router = require('./router')('router')
@@ -20,6 +22,7 @@ module.exports = () => {
 
   // middlewares
   app.use(cors())
+  app.use(passport.initialize())
   app.use(logger)
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
   app.use(router)

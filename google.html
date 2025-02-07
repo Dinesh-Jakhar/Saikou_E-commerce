@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Sign-In</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 50px;
+      }
+      #profile {
+        display: none;
+        margin-top: 20px;
+      }
+      img {
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Sign in with Google</h2>
+    <div
+      id="g_id_onload"
+      data-client_id="40114580216-dkba0vrpilnenob4mdg8gpqd279mi47h.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+    ></div>
+
+    <div class="g_id_signin" data-type="standard"></div>
+
+    <div id="profile">
+      <h3>Welcome, <span id="user-name"></span></h3>
+      <img id="user-img" src="" alt="Profile Picture" width="100" />
+      <p>Email: <span id="user-email"></span></p>
+      <button onclick="signOut()">Sign Out</button>
+    </div>
+
+    <script>
+      function handleCredentialResponse(response) {
+        console.log('ID Token:', response.credential)
+
+        // Decode JWT to get user details
+        const userInfo = parseJwt(response.credential)
+        document.getElementById('user-name').textContent = userInfo.name
+        document.getElementById('user-email').textContent = userInfo.email
+        document.getElementById('user-img').src = userInfo.picture
+
+        document.querySelector('.g_id_signin').style.display = 'none'
+        document.getElementById('profile').style.display = 'block'
+      }
+
+      function parseJwt(token) {
+        const base64Url = token.split('.')[1]
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+        return JSON.parse(decodeURIComponent(escape(atob(base64))))
+      }
+
+      function signOut() {
+        document.querySelector('.g_id_signin').style.display = 'block'
+        document.getElementById('profile').style.display = 'none'
+      }
+    </script>
+  </body>
+</html>

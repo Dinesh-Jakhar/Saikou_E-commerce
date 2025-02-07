@@ -53,9 +53,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      isDefault: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
+      // isDefault: {
+      //   type: DataTypes.BOOLEAN,
+      //   defaultValue: false,
+      // },
+      address_type: {
+        type: DataTypes.ENUM('home', 'office', 'other'),
+        allowNull: false,
+        defaultValue: 'home',
       },
       createdAt: {
         type: DataTypes.DATE,

@@ -26,7 +26,7 @@ module.exports = ({
     try {
       // await new Promise((resolve) => setTimeout(resolve, 10000))
       console.log('Cron job started')
-
+      //0 7 * * *
       cron.schedule('0 7 * * *', async () => {
         await sleep(5000)
         console.log('List Fulfillment Order Status CRON Started')

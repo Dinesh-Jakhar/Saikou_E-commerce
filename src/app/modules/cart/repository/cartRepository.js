@@ -97,7 +97,6 @@ const cartRepository = ({
         where: {
           [Op.and]: [{ userId }, { productId }, { sessionId }],
         },
-        paranoid: true,
         transaction,
       })
 

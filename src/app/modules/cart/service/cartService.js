@@ -26,7 +26,12 @@ const cartService = ({
           errors: 'Inventory information is unavailable',
         })
       }
-
+      if (availableStock == 0) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'OUT OF STOCK',
+        })
+      }
       const session = await cartRepository.getOrCreateSession(
         userId,
         transaction
@@ -44,6 +49,12 @@ const cartService = ({
             errors: 'Insufficient stock',
           })
         }
+        if (count <= 0) {
+          throw new CustomError({
+            ...HTTP_ERRORS.BAD_REQUEST,
+            errors: 'Unable to add Quantity to the Cart',
+          })
+        }
         const cartItem = await cartRepository.addCartItem(
           session.id,
           productId,
@@ -55,18 +66,18 @@ const cartService = ({
         await transaction.commit()
         return cartItem
       } else {
-        const cart_item = await cartRepository.cart_item(
-          userId,
-          productId,
-          session.id,
-          transaction
-        )
-        if (!cart_item) {
-          throw new CustomError({
-            ...HTTP_ERRORS.BAD_REQUEST,
-            errors: 'No Such Cart Exists with the given Product',
-          })
-        }
+        // const cart_item = await cartRepository.cart_item(
+        //   userId,
+        //   productId,
+        //   session.id,
+        //   transaction
+        // )
+        // if (!cart_item) {
+        //   throw new CustomError({
+        //     ...HTTP_ERRORS.BAD_REQUEST,
+        //     errors: 'No Such Cart Exists with the given Product',
+        //   })
+        // }
 
         const totalCount = cart_item.quantity + count
         if (totalCount < 0 || totalCount > availableStock) {
@@ -151,7 +162,7 @@ const cartService = ({
     try {
       const session = await cartRepository.getShoppingSession(userId)
       if (!session) {
-        return 'Cart is Empty'
+        return []
       }
       const sessionId = session.id
       const cartItems = await cartRepository.cartItemsOfUser(sessionId)

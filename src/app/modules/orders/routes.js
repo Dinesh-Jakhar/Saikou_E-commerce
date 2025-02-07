@@ -4,7 +4,6 @@ const dto = require('./controller/dto')
 const order_controller = require('./controller/order_controller')
 const authorize = require('../../../middlewares/authorize/authorize')
 const authenticateJWT = require('../../../middlewares/jwt/jwt_authentication')
-const express = require('express')
 
 const order = createController(order_controller)
   .prefix('/')
@@ -23,5 +22,7 @@ const order = createController(order_controller)
   .get('getOrder', 'getMyOrders', {
     before: [authenticateJWT],
   })
-
+  .post('return-order', 'returnOrder', {
+    before: [authenticateJWT, payloadValidationMiddleware(dto.returnOrders)],
+  })
 module.exports = order

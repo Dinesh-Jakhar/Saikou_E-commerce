@@ -7,6 +7,17 @@ const orderService = ({
   emailService,
   queues,
 }) => ({
+  returnOrder: async (order_id, return_reason, userId) => {
+    try {
+      return await orderRepository.PlaceReturnOrder(
+        order_id,
+        return_reason,
+        userId
+      )
+    } catch (error) {
+      throw error
+    }
+  },
   checkForValidSessionId: async (sessionId, userId) => {
     try {
       return await orderRepository.checkForValidSessionId(sessionId, userId)

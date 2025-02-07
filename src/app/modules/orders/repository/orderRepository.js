@@ -31,6 +31,38 @@ const orderRepository = ({
       throw error
     }
   },
+  PlaceReturnOrder: async (order_id, return_reason, userId) => {
+    try {
+      const orderDetailModel = await readerDatabase('OrderDetail')
+      const fulfillmentOrderModel = await writerDatabase('FulfillmentShipment')
+      const checkForValidOrders = await orderDetailModel.findOne({
+        where: { id: order_id, userId },
+      })
+      if (!checkForValidOrders) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'No Such Order Exists',
+        })
+      }
+      const fulfillmentRecord = await fulfillmentOrderModel.findOne({
+        where: { orderId: order_id, orderCurrentStatus: 'DELIVERED' },
+      })
+
+      if (!fulfillmentRecord) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'Order is not eligible for return. It must be delivered.',
+        })
+      } else {
+        fulfillmentRecord.retrun_reason = return_reason
+        fulfillmentRecord.orderCurrentStatus = 'RETURNING'
+        await fulfillmentRecord.save()
+      }
+      return fulfillmentRecord
+    } catch (error) {
+      throw error
+    }
+  },
   findProductAndDiscountDetails: async (productId) => {
     try {
       const productModel = await readerDatabase('Product')
@@ -84,7 +116,7 @@ const orderRepository = ({
       const orderId = `#ORDER-${String(lastOrderNumber).padStart(4, '0')}`
 
       const address = await addressModel.findOne({
-        where: { id: addressId },
+        where: { id: addressId, userId },
         transaction,
       })
       if (!address) {
@@ -174,7 +206,7 @@ const orderRepository = ({
               {
                 model: productModel,
                 as: 'product', // Assuming the alias is 'product' for OrderItem -> Product relation
-                attributes: ['name', 'imageUrls'], // Fetch product name and image
+                attributes: ['id', 'name', 'desc', 'imageUrls'], // Fetch product name and image
               },
             ],
           },
@@ -268,7 +300,7 @@ const orderRepository = ({
               {
                 model: productModel,
                 as: 'product', // Assuming the alias is 'product' for OrderItem -> Product relation
-                attributes: ['name', 'imageUrls'], // Fetch product name and image
+                attributes: ['id', 'name', 'desc', 'imageUrls'], // Fetch product name and image
               },
             ],
           },

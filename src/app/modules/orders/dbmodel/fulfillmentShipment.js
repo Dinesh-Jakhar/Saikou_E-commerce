@@ -52,12 +52,17 @@ module.exports = (sequelize, DataTypes) => {
           'DELIVERED',
           'RETURNING',
           'RETURNED',
+          'RETURN_REJECTED',
           'UNDELIVERABLE',
           'DELAYED',
           'OUT_FOR_DELIVERY',
           'DELIVERY_ATTEMPTED',
           'OTHER'
         ),
+        allowNull: true,
+      },
+      return_reason: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
       estimatedArrivalDate: {

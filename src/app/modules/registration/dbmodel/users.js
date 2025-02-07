@@ -23,9 +23,9 @@ module.exports = (sequelize, DataTypes) => {
       password: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-          len: [5, 100],
-        },
+        // validate: {
+        //   len: [5, 100],
+        // },
       },
       role: {
         type: DataTypes.ENUM('admin', 'user'),

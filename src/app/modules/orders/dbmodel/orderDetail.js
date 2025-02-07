@@ -56,7 +56,6 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 'pending',
         allowNull: false,
       },
-
       // paymentId: {
       //   type: DataTypes.UUID,
       //   allowNull: true,

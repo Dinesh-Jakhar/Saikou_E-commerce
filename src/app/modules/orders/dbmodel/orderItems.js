@@ -31,6 +31,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 1,
+        validate: {
+          min: 0,
+        },
       },
       orderItemAmount: {
         type: DataTypes.DECIMAL(10, 2),

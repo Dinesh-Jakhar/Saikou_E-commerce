@@ -3,8 +3,25 @@ module.exports = ({
   orderService,
   CustomError,
   HTTP_ERRORS,
-  SellingPartner,
+  // SellingPartner,
 }) => ({
+  returnOrder: async (req, res, next) => {
+    try {
+      const userId = req.user.id
+      const { order_id, return_reason } = req.body
+      const returned = await orderService.returnOrder(
+        order_id,
+        return_reason,
+        userId
+      )
+      return res.status(201).json({
+        status: 'success',
+        message: 'Return Placed Successfully',
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
   checkOutTheOrder: async (req, res, next) => {
     try {
       const userId = req.user.id

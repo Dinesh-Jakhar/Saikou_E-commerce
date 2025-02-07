@@ -42,7 +42,7 @@ const productUpload = multer.diskStorage({
 const uploadMultipleImages = multer({
   storage: productUpload,
   limits: {
-    fileSize: 1 * 1024 * 1024,
+    fileSize: 2 * 1024 * 1024,
     files: 7,
   }, // 1MB limit per file
 }).fields([
