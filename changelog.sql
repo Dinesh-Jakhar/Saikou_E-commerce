@@ -1,3 +1,23 @@
+
+drop database saikou;
+create database saikou;
+use saikou;
+
+CREATE TABLE `user` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `first_name` varchar(255) NOT NULL,
+  `last_name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('admin','user') NOT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `otp_expires_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE `address` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -15,9 +35,70 @@ CREATE TABLE `address` (
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
-  CONSTRAINT `address_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `address_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  CONSTRAINT `address_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `discount` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `desc` varchar(255) DEFAULT NULL,
+  `discount_percent` decimal(5,2) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `orderdetail` (
+  `id` varchar(255) NOT NULL,
+  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `total` decimal(10,2) NOT NULL,
+  `fulfillment_order_status` enum('New','Received','Planning','Processing','Cancelled','Complete','CompletePartialled','Unfulfillable','Invalid') DEFAULT NULL,
+  `order_status` enum('pending','pendingAmazon','onAmazon') NOT NULL DEFAULT 'pending',
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `orderdetail_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON UPDATE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE `product` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `desc` text,
+  `price` decimal(10,2) NOT NULL,
+  `image_urls` json DEFAULT NULL,
+  `discount_id` int DEFAULT NULL,
+  `seller_sku` varchar(255) NOT NULL,
+  `fn_sku` varchar(255) DEFAULT NULL,
+  `asin` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `seller_sku` (`seller_sku`),
+  UNIQUE KEY `fn_sku` (`fn_sku`),
+  UNIQUE KEY `asin` (`asin`),
+  KEY `discount_id` (`discount_id`),
+  CONSTRAINT `product_ibfk_1` FOREIGN KEY (`discount_id`) REFERENCES `discount` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE `shoppingsession` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `shoppingsession_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 
 
 CREATE TABLE `cartitem` (
@@ -35,23 +116,10 @@ CREATE TABLE `cartitem` (
   KEY `product_id` (`product_id`),
   CONSTRAINT `cartitem_ibfk_1` FOREIGN KEY (`session_id`) REFERENCES `shoppingsession` (`id`) ON UPDATE CASCADE,
   CONSTRAINT `cartitem_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cartitem_ibfk_3` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cartitem_ibfk_4` FOREIGN KEY (`session_id`) REFERENCES `shoppingsession` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `cartitem_ibfk_5` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cartitem_ibfk_6` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  CONSTRAINT `cartitem_ibfk_3` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
-CREATE TABLE `discount` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
-  `desc` varchar(255) DEFAULT NULL,
-  `discount_percent` decimal(5,2) NOT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 
 CREATE TABLE `fulfillmentshipment` (
@@ -72,12 +140,9 @@ CREATE TABLE `fulfillmentshipment` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `amazon_shipment_id` (`amazon_shipment_id`),
   UNIQUE KEY `tracking_number` (`tracking_number`),
-  UNIQUE KEY `amazon_shipment_id_2` (`amazon_shipment_id`),
-  UNIQUE KEY `tracking_number_2` (`tracking_number`),
   KEY `order_id` (`order_id`),
-  CONSTRAINT `fulfillmentshipment_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `fulfillmentshipment_ibfk_2` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  CONSTRAINT `fulfillmentshipment_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON UPDATE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 
@@ -88,8 +153,7 @@ CREATE TABLE `health_check` (
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 CREATE TABLE `inventory` (
@@ -100,8 +164,7 @@ CREATE TABLE `inventory` (
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`product_id`),
   CONSTRAINT `inventory_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 CREATE TABLE `orderaddress` (
@@ -121,26 +184,10 @@ CREATE TABLE `orderaddress` (
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
-  CONSTRAINT `orderaddress_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `orderaddress_ibfk_2` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  CONSTRAINT `orderaddress_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON UPDATE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
-CREATE TABLE `orderdetail` (
-  `id` varchar(255) NOT NULL,
-  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `total` decimal(10,2) NOT NULL,
-  `fulfillment_order_status` enum('New','Received','Planning','Processing','Cancelled','Complete','CompletePartialled','Unfulfillable','Invalid') DEFAULT NULL,
-  `order_status` enum('pending','pendingAmazon','onAmazon') NOT NULL DEFAULT 'pending',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `orderdetail_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `orderdetail_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 
 CREATE TABLE `orderitem` (
@@ -157,10 +204,8 @@ CREATE TABLE `orderitem` (
   KEY `order_id` (`order_id`),
   KEY `product_id` (`product_id`),
   CONSTRAINT `orderitem_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `orderitem_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `orderitem_ibfk_3` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `orderitem_ibfk_4` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  CONSTRAINT `orderitem_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 CREATE TABLE `paymentdetails` (
@@ -178,63 +223,8 @@ CREATE TABLE `paymentdetails` (
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
-  CONSTRAINT `paymentdetails_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `paymentdetails_ibfk_2` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  CONSTRAINT `paymentdetails_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orderdetail` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
-CREATE TABLE `product` (
-  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `desc` text,
-  `price` decimal(10,2) NOT NULL,
-  `image_urls` json DEFAULT NULL,
-  `discount_id` int DEFAULT NULL,
-  `seller_sku` varchar(255) NOT NULL,
-  `fn_sku` varchar(255) DEFAULT NULL,
-  `asin` varchar(255) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `seller_sku` (`seller_sku`),
-  UNIQUE KEY `seller_sku_2` (`seller_sku`),
-  UNIQUE KEY `fn_sku` (`fn_sku`),
-  UNIQUE KEY `asin` (`asin`),
-  UNIQUE KEY `fn_sku_2` (`fn_sku`),
-  UNIQUE KEY `asin_2` (`asin`),
-  KEY `discount_id` (`discount_id`),
-  CONSTRAINT `product_ibfk_1` FOREIGN KEY (`discount_id`) REFERENCES `discount` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `product_ibfk_2` FOREIGN KEY (`discount_id`) REFERENCES `discount` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
-
-CREATE TABLE `shoppingsession` (
-  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  `deleted_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `shoppingsession_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `shoppingsession_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-
-
-CREATE TABLE `user` (
-  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `first_name` varchar(255) NOT NULL,
-  `last_name` varchar(255) DEFAULT NULL,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `role` enum('admin','user') NOT NULL,
-  `reset_token` varchar(255) DEFAULT NULL,
-  `otp_expires_at` datetime DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `email_2` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
