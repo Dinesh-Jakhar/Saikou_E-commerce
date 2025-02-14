@@ -1,8 +1,12 @@
+const { cancelFulfillmentOrder } = require('../../../config/sp-api')
+const { Op, fn, col } = require('sequelize')
+
 const orderRepository = ({
   writerDatabase,
   readerDatabase,
   CustomError,
   HTTP_ERRORS,
+  configs,
 }) => ({
   checkForValidSessionId: async (sessionId, userId) => {
     try {
@@ -63,6 +67,29 @@ const orderRepository = ({
       throw error
     }
   },
+  actions_on_returns: async (status, orderId) => {
+    try {
+      const fulfillmentOrderModel = await writerDatabase('FulfillmentShipment')
+      const fulfillmentRecord = await fulfillmentOrderModel.findOne({
+        where: {
+          orderCurrentStatus: 'RETURNING',
+          orderId,
+        },
+      })
+      if (!fulfillmentRecord) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'Order is not eligible for returns.',
+        })
+      }
+      const final_status = status === 'Approv' ? 'RETURNED' : 'RETURN_REJECTED'
+      fulfillmentRecord.orderCurrentStatus = final_status
+      await fulfillmentRecord.save()
+      return `${status}ed`
+    } catch (error) {
+      throw error
+    }
+  },
   findProductAndDiscountDetails: async (productId) => {
     try {
       const productModel = await readerDatabase('Product')
@@ -85,6 +112,312 @@ const orderRepository = ({
         ],
       })
       return productDetails
+    } catch (error) {
+      throw error
+    }
+  },
+  cancelOrder: async (order_id) => {
+    try {
+      const orderDetailModel = await writerDatabase('OrderDetail')
+      const fulfillmentShipmentModel = await writerDatabase(
+        'FulfillmentShipment'
+      )
+      const the_order = await orderDetailModel.findOne({
+        where: {
+          id: order_id,
+          fulfillmentOrderStatus: {
+            [Op.in]: ['Received', 'Planning', 'Processing'],
+          },
+        },
+      })
+      if (!the_order) {
+        throw new CustomError({
+          ...HTTP_ERRORS.BAD_REQUEST,
+          errors: 'No Order Found To Cancel',
+        })
+      }
+
+      const response = await cancelFulfillmentOrder(order_id)
+      // console.log("Amazon SP-API Cancel Response:", response);
+
+      await fulfillmentShipmentModel.update(
+        {
+          orderCurrentStatus: null,
+          // fulfillmentShipmentStatus: null,
+        },
+        { where: { orderId: order_id } }
+      )
+
+      await orderDetailModel.update(
+        { fulfillmentOrderStatus: 'Cancelled' },
+        { where: { id: order_id } }
+      )
+      return { message: 'Order successfully cancelled' }
+    } catch (error) {
+      throw error
+    }
+  },
+  getSalesAnalytics: async () => {
+    try {
+      const orderDetailModel = await readerDatabase('OrderDetail')
+      const orderItemModel = await readerDatabase('OrderItem')
+      const paymentDetailsModel = await readerDatabase('PaymentDetails')
+      const userModel = await readerDatabase('User')
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      // Get the start of the current week (Monday)
+      const startOfWeek = new Date(today)
+      const dayOfWeek = today.getDay()
+      if (dayOfWeek !== 1) {
+        // If today is not Monday, move back to last Monday
+        startOfWeek.setDate(today.getDate() - ((dayOfWeek + 6) % 7))
+      }
+
+      startOfWeek.setHours(0, 0, 0, 0)
+
+      // Get the start of the current month
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      startOfMonth.setHours(0, 0, 0, 0)
+      const totalRevenue = await paymentDetailsModel.sum('amount', {
+        where: { status: 'succeeded' },
+      })
+
+      const totalOrders = await orderDetailModel.count({
+        where: {
+          order_status: {
+            [Op.in]: ['pendingAmazon', 'onAmazon'],
+          },
+        },
+      })
+      const todaysOrders = await orderDetailModel.count({
+        where: {
+          order_status: {
+            [Op.in]: ['pendingAmazon', 'onAmazon'],
+          },
+          createdAt: {
+            [Op.eq]: today,
+          },
+        },
+      })
+
+      const validOrderIds = await orderDetailModel.findAll({
+        attributes: ['id'],
+        where: {
+          order_status: {
+            [Op.in]: ['pendingAmazon', 'onAmazon'],
+          },
+        },
+        raw: true, // Returns only the data, not Sequelize instances
+      })
+
+      // Step 2: Extract order IDs into an array
+      const orderIds = validOrderIds.map((order) => order.id)
+
+      if (orderIds.length === 0) {
+        totalUnitsSold = 0 // No valid orders, so no units sold
+      } else {
+        // Step 3: Calculate total quantity sold from OrderItem linked to valid orders
+        totalUnitsSold =
+          (await orderItemModel.sum('quantity', {
+            where: {
+              orderId: {
+                [Op.in]: orderIds,
+              },
+            },
+          })) || 0
+      }
+
+      const weeklySales = await paymentDetailsModel.sum('amount', {
+        where: {
+          status: 'succeeded',
+          createdAt: {
+            [Op.gte]: startOfWeek,
+          },
+        },
+      })
+
+      const monthlySales = await paymentDetailsModel.sum('amount', {
+        where: {
+          status: 'succeeded',
+          createdAt: {
+            [Op.gte]: startOfMonth,
+          },
+        },
+      })
+
+      const totalUsers = await userModel.count()
+
+      return {
+        totalRevenue: totalRevenue || 0,
+        todaysOrders,
+        totalOrders,
+        totalUnitsSold: totalUnitsSold || 0,
+        weeklySales: weeklySales || 0,
+        monthlySales: monthlySales || 0,
+        totalUsers,
+      }
+    } catch (error) {
+      throw error
+    }
+  },
+  getSalesAnalytics2: async (selectedYear1, selectedYear2) => {
+    try {
+      const [
+        orderDetailModel,
+        orderItemModel,
+        paymentDetailsModel,
+        productModel,
+        fulfillmentShipmentModel,
+      ] = await Promise.all([
+        readerDatabase('OrderDetail'),
+        readerDatabase('OrderItem'),
+        readerDatabase('PaymentDetails'),
+        readerDatabase('Product'),
+        readerDatabase('FulfillmentShipment'),
+      ])
+
+      const validOrderIds = await orderDetailModel.findAll({
+        attributes: ['id'],
+        where: {
+          order_status: { [Op.not]: 'pending' },
+          fulfillmentOrderStatus: {
+            [Op.or]: [{ [Op.not]: ['Cancelled'] }, { [Op.is]: null }],
+          },
+          id: {
+            [Op.in]: (
+              await paymentDetailsModel.findAll({
+                attributes: ['orderId'],
+                where: { status: 'succeeded' },
+                raw: true,
+              })
+            ).map((entry) => entry.orderId),
+          },
+        },
+        include: [
+          {
+            model: fulfillmentShipmentModel,
+            as: 'fulfillmentShipments',
+            attributes: [],
+            required: false,
+            where: {
+              orderCurrentStatus: {
+                [Op.or]: [{ [Op.not]: ['RETURNED'] }, { [Op.is]: null }],
+              },
+            },
+          },
+        ],
+        raw: true,
+      })
+
+      const orderIds = validOrderIds.map((entry) => entry.id)
+      const getUnitsPerMonth = async (year) => {
+        const unitsPerMonth = await orderItemModel.findAll({
+          attributes: [
+            [fn('MONTH', col('OrderDetail.created_at')), 'month'],
+            'productId',
+            [fn('sum', col('quantity')), 'totalUnits'],
+          ],
+          include: [
+            {
+              model: orderDetailModel,
+              as: 'orderDetail',
+              attributes: [],
+              where: {
+                id: { [Op.in]: orderIds },
+                createdAt: {
+                  [Op.between]: [new Date(year, 0, 1), new Date(year, 11, 31)],
+                },
+              },
+            },
+          ],
+          group: [col('month'), col('productId')],
+          raw: true,
+        })
+        const unitsByMonth = {}
+
+        for (const entry of unitsPerMonth) {
+          const { month, productId, totalUnits } = entry
+
+          // Fetch product name
+          const product = await productModel.findOne({
+            attributes: ['name'],
+            where: { id: productId },
+            raw: true,
+          })
+
+          if (product) {
+            const productName = product.name
+            if (!unitsByMonth[`Month-${month}`]) {
+              unitsByMonth[`Month-${month}`] = {}
+            }
+            unitsByMonth[`Month-${month}`][productName] =
+              (unitsByMonth[`Month-${month}`][productName] || 0) +
+              Number(totalUnits)
+          }
+        }
+
+        return unitsByMonth
+      }
+
+      // Function to get revenue per product per month for a given year
+      const getRevenuePerProductMonth = async (year) => {
+        const revenuePerMonth = await paymentDetailsModel.findAll({
+          attributes: [
+            [fn('MONTH', col('created_at')), 'month'],
+            'orderId',
+            [fn('sum', col('amount')), 'totalRevenue'],
+          ],
+          where: {
+            status: 'succeeded',
+            orderId: { [Op.in]: orderIds },
+            createdAt: {
+              [Op.between]: [new Date(year, 0, 1), new Date(year, 11, 31)],
+            },
+          },
+          group: ['month', 'orderId'],
+          raw: true,
+        })
+
+        // Map revenue per month to products
+        const revenueByProductMonth = {}
+        for (const entry of revenuePerMonth) {
+          const { month, orderId, totalRevenue } = entry
+          const productEntry = await orderItemModel.findOne({
+            attributes: ['productId'],
+            where: { orderId },
+            raw: true,
+          })
+
+          if (productEntry) {
+            const { productId } = productEntry
+            const product = await productModel.findOne({
+              attributes: ['id', 'name'],
+              where: { id: productId },
+              raw: true,
+            })
+
+            if (product) {
+              if (!revenueByProductMonth[product.name]) {
+                revenueByProductMonth[product.name] = {}
+              }
+              revenueByProductMonth[product.name][`Month-${month}`] =
+                (revenueByProductMonth[product.name][`Month-${month}`] || 0) +
+                Number(totalRevenue)
+            }
+          }
+        }
+        return revenueByProductMonth
+      }
+
+      // Fetch both results in parallel
+      const [noOfUnits_vs_products, revenue_vs_month] = await Promise.all([
+        getUnitsPerMonth(selectedYear1),
+        getRevenuePerProductMonth(selectedYear2),
+      ])
+
+      return { noOfUnits_vs_products, revenue_vs_month }
     } catch (error) {
       throw error
     }
@@ -186,11 +519,13 @@ const orderRepository = ({
       const fulfillmentShipmentModel = await readerDatabase(
         'FulfillmentShipment'
       )
+      const baseUrl = configs.SERVER_IMAGE_URL
       const orders = await orderDetailModel.findAll({
         where: {
           userId,
           order_status: ['pendingAmazon', 'onAmazon'], // Filter by order_status
         },
+        order: [['createdAt', 'DESC']],
         include: [
           {
             model: paymentDetailsModel,
@@ -257,7 +592,14 @@ const orderRepository = ({
         items: order.orderItems.map((item) => ({
           quantity: item.quantity,
           orderItemAmount: item.orderItemAmount,
-          product: item.product,
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            desc: item.product.desc,
+            imageUrls: (item.product.imageUrls || []).map(
+              (image) => `${baseUrl}${image}`
+            ),
+          },
         })),
         shipments: order.fulfillmentShipments,
       }))
@@ -280,6 +622,7 @@ const orderRepository = ({
         where: {
           order_status: ['pendingAmazon', 'onAmazon'], // Filter by order_status
         },
+        order: [['createdAt', 'DESC']],
         include: [
           {
             model: userModel,
@@ -339,6 +682,7 @@ const orderRepository = ({
           'fulfillmentOrderStatus',
         ], // Attributes from OrderDetail
       })
+      const baseUrl = configs.SERVER_IMAGE_URL
       // Format the result for better readability
       return orders.map((order) => ({
         orderId: order.id,
@@ -360,7 +704,14 @@ const orderRepository = ({
         items: order.orderItems.map((item) => ({
           quantity: item.quantity,
           orderItemAmount: item.orderItemAmount,
-          product: item.product,
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            desc: item.product.desc,
+            imageUrls: (item.product.imageUrls || []).map(
+              (image) => `${baseUrl}${image}`
+            ),
+          },
         })),
         shipments: order.fulfillmentShipments,
       }))

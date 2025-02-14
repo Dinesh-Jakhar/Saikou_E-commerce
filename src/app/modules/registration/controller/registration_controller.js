@@ -25,6 +25,17 @@ module.exports = ({ registrationService, logger, CustomError, ERRORS }) => ({
       next(error)
     }
   },
+  contact_us: async (req, res, next) => {
+    try {
+      const { name, email, message } = req.body
+      await registrationService.send_query(name, email, message)
+      return res.status(201).json({
+        message: 'Thankyou for contacting us. We will soon reach out to you',
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
   login: async (req, res, next) => {
     try {
       const { email, password } = req.body
@@ -37,10 +48,20 @@ module.exports = ({ registrationService, logger, CustomError, ERRORS }) => ({
       return next(error)
     }
   },
+  serveResetPasswordPage: async (req, res, next) => {
+    try {
+      console.log('Hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii')
+      return res.status(200).json({
+        message: 'Hiiiiiiiiiii',
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
   forgotPassword: async (req, res, next) => {
     try {
       const { email } = req.body
-      const data = await registrationService.forgotPassword(email)
+      await registrationService.forgotPassword(email)
       return res.status(200).json({
         message: 'Reset Link has been sent to your Email',
       })

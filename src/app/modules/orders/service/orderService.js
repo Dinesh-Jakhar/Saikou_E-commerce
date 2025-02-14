@@ -4,9 +4,29 @@ const orderService = ({
   HTTP_ERRORS,
   writerSequelize,
   stripe,
+  configs,
   emailService,
   queues,
 }) => ({
+  adminInfo_1: async () => {
+    try {
+      const salesAnalytics = await orderRepository.getSalesAnalytics()
+      return salesAnalytics
+    } catch (error) {
+      throw error
+    }
+  },
+  getSalesAnalytics2: async (year1, year2) => {
+    try {
+      const salesAnalytics = await orderRepository.getSalesAnalytics2(
+        year1,
+        year2
+      )
+      return salesAnalytics
+    } catch (error) {
+      throw error
+    }
+  },
   returnOrder: async (order_id, return_reason, userId) => {
     try {
       return await orderRepository.PlaceReturnOrder(
@@ -14,6 +34,20 @@ const orderService = ({
         return_reason,
         userId
       )
+    } catch (error) {
+      throw error
+    }
+  },
+  actions_on_returns: async (status, orderId) => {
+    try {
+      return await orderRepository.actions_on_returns(status, orderId)
+    } catch (error) {
+      throw error
+    }
+  },
+  cancelOrder: async (order_id) => {
+    try {
+      return await orderRepository.cancelOrder(order_id)
     } catch (error) {
       throw error
     }
@@ -167,7 +201,44 @@ const orderService = ({
   },
   listAllFulfillmentOrdersFromDB: async () => {
     try {
-      return await orderRepository.listAllFulfillmentOrdersFromDB()
+      const orders = await orderRepository.listAllFulfillmentOrdersFromDB()
+      return orders.map((order) => {
+        let frontend_fields = {
+          canCancel: false,
+        }
+        // const canReturn=null;
+        if (order.orderCompletionStatus == 'pendingAmazon') {
+          frontend_fields.final_status = 'Payment Received but Order is Pending'
+        } else if (order.orderCompletionStatus === 'onAmazon') {
+          if (order.shipments?.orderCurrentStatus === 'RETURNING') {
+            frontend_fields.final_status = 'RETURNING'
+          } else if (order.shipments?.orderCurrentStatus === 'RETURNED') {
+            frontend_fields.final_status = 'RETURNED'
+          } else {
+            if (
+              ['Received', 'Planning', 'Processing'].includes(
+                order.fulfillmentOrderStatus
+              )
+            ) {
+              frontend_fields.canCancel = true
+              frontend_fields.final_status = order.fulfillmentOrderStatus
+            } else if (order.fulfillmentOrderStatus == 'Complete') {
+              if (order.shipments?.orderCurrentStatus != null) {
+                frontend_fields.final_status =
+                  order.shipments.orderCurrentStatus
+              } else {
+                frontend_fields.final_status = 'ReadyToShip'
+              }
+            } else {
+              frontend_fields.final_status = order.fulfillmentOrderStatus
+            }
+          }
+        }
+        return {
+          ...order,
+          ...frontend_fields,
+        }
+      })
     } catch (error) {
       throw error
     }
@@ -175,7 +246,54 @@ const orderService = ({
   getMyOrders: async (userId) => {
     try {
       const orders = await orderRepository.getMyOrders(userId)
-      return orders
+      return orders.map((order) => {
+        let frontend_fields = {
+          canReturn: false,
+        }
+        // const canReturn=null;
+        if (order.orderCompletionStatus == 'pendingAmazon') {
+          frontend_fields.final_status = 'Processing Issue'
+        } else if (order.orderCompletionStatus === 'onAmazon') {
+          if (order.shipments?.orderCurrentStatus === 'RETURNING') {
+            frontend_fields.final_status = 'RETURNING'
+          } else if (order.shipments?.orderCurrentStatus === 'RETURNED') {
+            frontend_fields.final_status = 'RETURNED'
+          } else {
+            if (
+              ['Unfulfillable', 'Invalid'].includes(
+                order.fulfillmentOrderStatus
+              )
+            ) {
+              frontend_fields.final_status = 'Unfulfillable'
+            } else if (
+              ['Received', 'Planning', 'Processing', 'New'].includes(
+                order.fulfillmentOrderStatus
+              )
+            ) {
+              frontend_fields.final_status =
+                order.fulfillmentOrderStatus === 'New'
+                  ? 'Received'
+                  : order.fulfillmentOrderStatus
+            } else if (order.fulfillmentOrderStatus === 'Complete') {
+              if (order.shipments?.orderCurrentStatus != null) {
+                frontend_fields.final_status =
+                  order.shipments.orderCurrentStatus
+                if (frontend_fields.final_status == 'DELIVERED') {
+                  frontend_fields.canReturn = true
+                }
+              } else {
+                frontend_fields.final_status = 'Processing'
+              }
+            } else if (order.fulfillmentOrderStatus == 'Cancelled') {
+              frontend_fields.final_status = 'Cancelled'
+            }
+          }
+        }
+        return {
+          ...order,
+          ...frontend_fields,
+        }
+      })
     } catch (error) {
       throw error
     }
@@ -241,7 +359,42 @@ const orderService = ({
 
       // Send confirmation email to user
       const emailTitle = 'Payment Confirmation'
-      const emailBody = `<p><strong>Congratulations!</strong> Your Payment was successful.</p>`
+      // const emailBody = `<p><strong>Congratulations!</strong> Your Payment was successful.</p>`
+      const emailBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+        
+        <div style="text-align: center; padding-bottom: 20px;">
+          <img src=${configs.EMAIL_LOGO_URL} alt="Saikouherbs" style="max-width: 150px;">
+        </div>
+
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 5px;">
+          <h2 style="color: #27ae60; text-align: center;">🎉 Payment Successful!</h2>
+          <p style="font-size: 16px; color: #333;">Dear Customer,</p>
+          <p style="font-size: 16px; color: #333;">We are pleased to inform you that your payment has been successfully processed.</p>
+          
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+          <h3 style="color: #444;">💳 Payment Details:</h3>
+          <p><strong>Amount Paid:</strong> $${(paymentIntent.amount / 100).toFixed(2)}</p>
+          <p><strong>Payment Method:</strong> ${paymentIntent.payment_method_types[0]}</p>
+
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+          <p style="font-size: 16px; color: #333;">If you have any questions regarding your order, please contact our support team.</p>
+
+          <div style="text-align: center; margin-top: 20px;">
+            <a href=${configs.EMAIL_CONTACT_US_PAGE} style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">
+              Contact Support
+            </a>
+          </div>
+        </div>
+
+        <p style="font-size: 14px; color: #777; text-align: center; margin-top: 20px;">
+          Thank you for choosing us! <br> &copy; ${new Date().getFullYear()} YourCompany. All rights reserved.
+        </p>
+
+      </div>
+    `
       await queues.addEmailToQueue(
         paymentIntent.metadata.user_email,
         emailTitle,

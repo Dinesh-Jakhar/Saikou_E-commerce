@@ -8,10 +8,6 @@ const {
 } = require('../utils/requiredFunctions')
 const { createClient } = require('redis')
 
-// const queueOptions = { connection: { host: 'localhost', port: 6379 } }
-
-// const emailQueue = new Queue('emailQueue', queueOptions)
-// const orderFullfilmentQueue = new Queue('orderFullfilmentQueue', queueOptions)
 const MAX_RETRY_ATTEMPTS = 2
 let redisConnected = false
 let stopServerFunction = null
@@ -23,7 +19,12 @@ const setStopServerFunction = (stopServer) => {
 }
 
 const testRedisConnection = async () => {
-  const client = createClient({ socket: { host: 'localhost', port: 6379 } })
+  const client = createClient({
+    socket: {
+      host: config.REDIS_HOST || '127.0.0.1',
+      port: config.REDIS_PORT || 6379,
+    },
+  })
 
   for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
     try {
@@ -47,26 +48,6 @@ const testRedisConnection = async () => {
   }
 }
 
-// const connection = {
-//   host: 'localhost',
-//   port: 6379,
-//   retryStrategy: (times) => {
-//     if (redisConnected) return false;
-//     // Wait time increases with each retry, max 10 seconds
-//     retryAttempts = times;
-//     console.log(`Attempting to reconnect to Redis... (Attempt ${times})`);
-//     if (times >= MAX_RETRY_ATTEMPTS) {
-//       console.error('Maximum Redis retry attempts reached. Shutting down...');
-//       shutdownApplication();
-//       return false; // Stop retrying
-//     }
-
-//     return Math.min(times * 1000, 10000);
-
-//   },
-//   maxRetriesPerRequest: null
-// };
-
 // Queue configurations with error handling
 const createQueue = (name) => {
   if (!redisConnected) {
@@ -74,7 +55,10 @@ const createQueue = (name) => {
     return null
   }
   const queue = new Queue(name, {
-    connection: { host: 'localhost', port: 6379 },
+    connection: {
+      host: config.REDIS_HOST || '127.0.0.1',
+      port: config.REDIS_PORT || 6379,
+    },
   })
 
   queue.on('error', (error) => {
@@ -91,43 +75,6 @@ const createQueue = (name) => {
 
   return queue
 }
-
-// let connection = null;
-// (async () => {
-//   const isConnected = await testRedisConnection();
-//   if (isConnected) {
-//     connection = { host: 'localhost', port: 6379 };
-//     console.log("Redis connection settings initialized.");
-//     initializeQueuesAndWorkers();
-//   }
-// })();
-
-// const initializeQueuesAndWorkers = () => {
-//   console.log("✅ Initializing queues and workers...");
-
-//   const createQueue = (name) => {
-//     const queue = new Queue(name, { connection });
-
-//     queue.on('error', (error) => {
-//       console.error(`Queue ${name} error:`, error);
-//     });
-
-//     queue.on('failed', (job, error) => {
-//       console.error(`Job ${job.id} in queue ${name} failed:`, error);
-//     });
-
-//     queue.on('completed', (job) => {
-//       console.log(`Job ${job.id} in queue ${name} completed successfully`);
-//     });
-
-//     return queue;
-//   };
-
-// }
-// const emailQueue = createQueue('emailQueue');
-// const orderFullfilmentQueue = createQueue('orderFullfilmentQueue');
-
-//Above
 
 //WORKERS
 const initializeWorkers = () => {
@@ -156,7 +103,12 @@ const initializeWorkers = () => {
         throw error
       }
     },
-    { connection: { host: 'localhost', port: 6379 } }
+    {
+      connection: {
+        host: config.REDIS_HOST || '127.0.0.1',
+        port: config.REDIS_PORT || 6379,
+      },
+    }
   )
 
   //Worker-2
@@ -211,15 +163,53 @@ const initializeWorkers = () => {
         throw error // Retry based on job attempts
       }
     },
-    { connection: { host: 'localhost', port: 6379 } }
+    {
+      connection: {
+        host: config.REDIS_HOST || '127.0.0.1',
+        port: config.REDIS_PORT || 6379,
+      },
+    }
   )
   orderFullfilmentWorker.on('completed', async (job) => {
     //console.log(`Order creation completed for Order ID: ${job.data.orderId}`);
     try {
       const emailTitle = 'Order Confirmation'
-      const emailBody = `<p>Dear Customer,</p>
-                           <p>Your order <strong>${job.data.orderId}</strong> has been successfully processed.</p>
-                           <p>Thank you for choosing us!</p>`
+
+      const emailBody = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+            
+            <div style="text-align: center; padding-bottom: 20px;">
+              <img src=${config.EMAIL_LOGO_URL} alt="Saikouherbs" style="max-width: 150px;">
+            </div>
+
+            <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; padding: 20px;">
+              <h2 style="color: #27ae60; text-align: center;">✅ Order Confirmed!</h2>
+              <p style="font-size: 16px; color: #333;">Dear Customer,</p>
+              <p style="font-size: 16px; color: #333;">Your order <strong>#${job.data.orderId}</strong> has been successfully processed. 🎉</p>
+
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+              <h3 style="color: #444;">📦 Order Details:</h3>
+              <p><strong>Order ID:</strong> ${job.data.orderId}</p>
+              <p><strong>Order Date:</strong> ${new Date().toLocaleDateString()}</p>
+              <p><strong>Payment Status:</strong> Confirmed ✅</p>
+
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+              <p style="font-size: 16px; color: #333;">You can track your order status using the button below:</p>
+
+            </div>
+
+            <p style="font-size: 14px; color: #777; text-align: center; margin-top: 20px;">
+              Thank you for shopping with us! <br> &copy; ${new Date().getFullYear()} Saikouherbs. All rights reserved.
+            </p>
+
+            <p style="color: #777; font-size: 14px; text-align: center;">
+              Need help? Contact us at <a href=${config.ADMIN_EMAIL}>customercare@saikouherbs.com</a>
+            </p>
+
+          </div>
+        `
 
       await mailSender(job.data.userEmail, emailTitle, emailBody)
       //Update the database status to onAmazon

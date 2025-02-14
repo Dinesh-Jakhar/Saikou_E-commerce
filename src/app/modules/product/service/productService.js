@@ -2,44 +2,27 @@ const productService = ({
   productRepository,
   CustomError,
   HTTP_ERRORS,
-  fs,
+  configs,
 }) => ({
+  topProducts: async function () {
+    const prod_1 = configs.TOP_PRODUCT_1_ID
+    const prod_2 = configs.TOP_PRODUCT_2_ID
+    const prod_3 = configs.TOP_PRODUCT_3_ID
+    const allTopProducts = await productRepository.topProducts(
+      prod_1,
+      prod_2,
+      prod_3
+    )
+    if (allTopProducts == null || allTopProducts.length == 0) {
+      return []
+    }
+    const enhancedProduct = await this.filterProducts(allTopProducts)
+    return enhancedProduct
+  },
   allProductsRoleWise: async function () {
     const allProds = await productRepository.allProducts()
     const enhancedProducts = await this.filterProducts(allProds)
     return enhancedProducts
-
-    // const enhancedProducts = allProds.map((product) => {
-    //   const { dataValues } = product
-
-    //   const discountPercent = dataValues.discounts
-    //     ? parseFloat(dataValues.discounts.dataValues.discount_percent)
-    //     : 0
-    //   const actualPrice =
-    //     parseFloat(dataValues.price) -
-    //     (parseFloat(dataValues.price) * discountPercent) / 100
-
-    //   const stockStatus =
-    //     dataValues.inventory.dataValues.quantity > 0
-    //       ? 'In Stock'
-    //       : 'Out of Stock'
-    //   const saleStatus = discountPercent > 0 ? 'Sale' : 'No Sale'
-
-    //   return {
-    //     name: dataValues.name,
-    //     // desc: dataValues.desc,
-    //     price: dataValues.price,
-    //     salePrice: actualPrice.toFixed(2),
-    //     stockStatus,
-    //     saleStatus,
-    //     imageUrls: dataValues.imageUrls,
-    //     created_at: dataValues.created_at,
-    //     discounts: dataValues.discounts,
-    //     inventory: dataValues.inventory,
-    //   }
-    // })
-
-    // return  enhancedProducts
   },
   getASingleProduct: async function (id) {
     try {
@@ -60,7 +43,7 @@ const productService = ({
     if (!Array.isArray(products)) {
       products = [products]
     }
-
+    const baseUrl = configs.SERVER_IMAGE_URL
     return products.map((product) => {
       const { dataValues } = product
       const discountPercent = dataValues.discounts
@@ -82,7 +65,14 @@ const productService = ({
         salePrice: actualPrice.toFixed(2),
         stockStatus,
         saleStatus,
-        imageUrls: dataValues.imageUrls,
+        imageUrls:
+          Array.isArray(dataValues.imageUrls) &&
+          dataValues.imageUrls.length > 0 &&
+          dataValues.imageUrls[0] !== null
+            ? dataValues.imageUrls.map((image) => `${baseUrl}${image}`)
+            : [],
+        // imageUrls:Array.isArray(dataValues.imageUrls)
+        // ? dataValues.imageUrls.map(image => `${baseUrl}${image}`): [],// (dataValues.imageUrls || []).map(image => `${baseUrl}${image}`),//dataValues.imageUrls,
         created_at: dataValues.created_at,
         discounts: dataValues.discounts,
         inventory: dataValues.inventory,

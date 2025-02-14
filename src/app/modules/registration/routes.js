@@ -22,6 +22,7 @@ const registration = createController(registration_controller)
   .post('/create_address', 'add_an_address', {
     before: [authenticateJWT, payloadValidationMiddleware(dto.addAddress)],
   })
+  .get('/reset-password', 'serveResetPasswordPage')
   .get('/get_all_address', 'get_all_address', {
     before: [authenticateJWT],
   })
@@ -35,5 +36,8 @@ const registration = createController(registration_controller)
   .get('/auth/google/callback', 'googleSignIn')
   .post('/delete_address', 'deleteAddress', {
     before: [authenticateJWT, payloadValidationMiddleware(dto.deleteAddress)],
+  })
+  .post('/contact-us', 'contact_us', {
+    before: [payloadValidationMiddleware(dto.contact_us)],
   })
 module.exports = registration

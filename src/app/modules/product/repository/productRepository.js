@@ -43,6 +43,49 @@ const productRepository = ({ writerDatabase, readerDatabase }) => ({
       throw error
     }
   },
+  topProducts: async (prod_1, prod_2, prod_3) => {
+    try {
+      const productModel = await readerDatabase('Product')
+      const inventoryModel = await readerDatabase('Inventory')
+      const discountModel = await readerDatabase('Discount')
+
+      const productIds = [prod_1, prod_2, prod_3].filter((id) => id)
+      //If top product are not 3 then
+      // if (productIds.length === 0) return [];
+
+      const topProducts = await productModel.findAll({
+        where: {
+          id: productIds,
+        },
+        include: [
+          {
+            model: discountModel,
+            attributes: ['id', 'name', 'discount_percent', 'deleted_at'],
+            as: 'discounts',
+          },
+          {
+            model: inventoryModel,
+            attributes: ['quantity'],
+            as: 'inventory',
+          },
+        ],
+        attributes: [
+          'id',
+          'name',
+          'desc',
+          'price',
+          'deleted_at',
+          'imageUrls',
+          'created_at',
+        ],
+      })
+
+      return topProducts
+    } catch (error) {
+      console.error('Error fetching top products:', error)
+      throw error
+    }
+  },
   allProducts: async () => {
     try {
       const productModel = await readerDatabase('Product')
@@ -71,7 +114,6 @@ const productRepository = ({ writerDatabase, readerDatabase }) => ({
           'imageUrls',
           'created_at',
         ],
-        paranoid: true,
       })
       return allProds
     } catch (error) {

@@ -45,7 +45,6 @@ module.exports = ({
       })
       cron.schedule('0 */2 * * *', async () => {
         await sleep(1000)
-        console.log('Canceling the payment intent')
         await this.cancelExpiredPayment()
       })
     } catch (error) {

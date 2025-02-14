@@ -1,3 +1,4 @@
+const configs = require('../../../config/config')
 module.exports = (sequelize, DataTypes) => {
   const Product = sequelize.define(
     'Product',
@@ -23,6 +24,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.JSON,
         allowNull: true,
         defaultValue: [],
+      },
+      fullImageUrls: {
+        type: DataTypes.VIRTUAL,
+        get() {
+          const baseUrl = configs.SERVER_IMAGE_URL
+          const rawImages = this.getDataValue('imageUrls') || []
+          return rawImages.map((image) => `${baseUrl}${image}`)
+        },
       },
       discountId: {
         type: DataTypes.INTEGER,
@@ -83,33 +92,3 @@ module.exports = (sequelize, DataTypes) => {
 
   return Product
 }
-
-// const generateSKU = async () => {
-//   const lastProduct = await Product.findOne({
-//     order: [['createdAt', 'DESC']],  // Get latest product
-//   });
-
-//   if (lastProduct) {
-//     const lastSku = lastProduct.id.replace('SKU', '');  // Remove "SKU" prefix
-//     const nextSku = parseInt(lastSku) + 1;  // Increment numeric part
-//     return `SKU${String(nextSku).padStart(4, '0')}`;  // Format to SKU0001, SKU0002
-//   } else {
-//     return 'SKU0001';  // Default for first product
-//   }
-// };
-
-// // Create a New Product with SKU
-// const createProduct = async (productData) => {
-//   const sku = await generateSKU();
-
-//   const newProduct = await Product.create({
-//     id: sku,
-//     name: productData.name,
-//     desc: productData.desc,
-//     price: productData.price,
-//     imageUrls: productData.imageUrls,
-//   });
-
-//   return newProduct;
-// };
-//UUID

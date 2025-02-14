@@ -1,7 +1,7 @@
 {
-  "name": "carrum-main-be",
+  "name": "saikouherbs-main-be",
   "version": "1.0.0",
-  "description": "carrim main backend app",
+  "description": "saikouherbs main backend app",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

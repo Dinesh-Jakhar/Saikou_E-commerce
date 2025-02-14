@@ -22,6 +22,53 @@ module.exports = ({
       return next(error)
     }
   },
+  cancelOrder: async (req, res, next) => {
+    try {
+      const { order_id } = req.body
+      const cancelled = await orderService.cancelOrder(order_id)
+      return res.status(201).json({
+        status: 'success',
+        message: 'Order Cancelled Successfully',
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
+  actions_on_returns: async (req, res, next) => {
+    try {
+      const { status, order_id } = req.body
+      const result = await orderService.actions_on_returns(status, order_id)
+      return res.status(201).json({
+        status: 'success',
+        message: `Return ${result} Successfully`,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
+  adminInfo_1: async (req, res, next) => {
+    try {
+      const infos = await orderService.adminInfo_1()
+      return res.status(200).json({
+        status: 'success',
+        infos,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
+  adminInfo_2: async (req, res, next) => {
+    try {
+      const { year1, year2 } = req.body
+      const infos = await orderService.getSalesAnalytics2(year1, year2)
+      return res.status(200).json({
+        status: 'success',
+        infos,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
   checkOutTheOrder: async (req, res, next) => {
     try {
       const userId = req.user.id

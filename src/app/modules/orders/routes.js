@@ -25,4 +25,28 @@ const order = createController(order_controller)
   .post('return-order', 'returnOrder', {
     before: [authenticateJWT, payloadValidationMiddleware(dto.returnOrders)],
   })
+  .post('cancelOrder', 'cancelOrder', {
+    before: [
+      authenticateJWT,
+      authorize('admin'),
+      payloadValidationMiddleware(dto.cancelOrders),
+    ],
+  })
+  .get('admin/info-1', 'adminInfo_1', {
+    before: [authenticateJWT, authorize('admin')],
+  })
+  .post('admin/info-2', 'adminInfo_2', {
+    before: [
+      authenticateJWT,
+      authorize('admin'),
+      payloadValidationMiddleware(dto.info2),
+    ],
+  })
+  .post('admin/action-on-returns', 'actions_on_returns', {
+    before: [
+      authenticateJWT,
+      authorize('admin'),
+      payloadValidationMiddleware(dto.returnsAction),
+    ],
+  })
 module.exports = order

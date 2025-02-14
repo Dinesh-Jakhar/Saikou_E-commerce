@@ -22,7 +22,11 @@ const resetPass = joi.object({
   newPassword: joi.string().required(),
   token: joi.string().required(),
 })
-
+const contact_us = joi.object({
+  name: joi.string().min(2).max(50).required(),
+  email: joi.string().email().required(),
+  message: joi.string().required(),
+})
 const addAddress = joi.object({
   name: joi.string().min(2).max(100).required(),
   addressLine1: joi.string().min(5).max(255).required(),
@@ -45,5 +49,13 @@ const addAddress = joi.object({
     .required(),
 })
 
-const dto = { signup, login, verify, resetPass, addAddress, deleteAddress }
+const dto = {
+  signup,
+  login,
+  verify,
+  resetPass,
+  addAddress,
+  deleteAddress,
+  contact_us,
+}
 module.exports = dto

@@ -5,6 +5,7 @@ const cartService = ({
   CustomError,
   HTTP_ERRORS,
   writerSequelize,
+  configs,
 }) => ({
   addToCart: async (productId, count, userId) => {
     const transaction = await writerSequelize.transaction()
@@ -176,6 +177,7 @@ const cartService = ({
     if (!Array.isArray(cartItems)) {
       cartItems = [cartItems]
     }
+    const baseUrl = configs.SERVER_IMAGE_URL
     const processedItems = cartItems.map((cartItem) => {
       const product = cartItem.product
 
@@ -199,7 +201,14 @@ const cartService = ({
       if (cartQuantity > availableStock) {
         message = 'OutOfStock'
       }
-
+      const updatedImageUrls =
+        Array.isArray(product.imageUrls) &&
+        product.imageUrls.length > 0 &&
+        product.imageUrls.some((img) => img !== null)
+          ? product.imageUrls
+              .filter((img) => img !== null)
+              .map((image) => `${baseUrl}${image}`)
+          : []
       // Return the processed item details
       return {
         cartItemId: cartItem.id,
@@ -213,7 +222,7 @@ const cartService = ({
         availableStock,
         message,
         totalPrice: (finalPrice * cartQuantity).toFixed(2), // Total price for the quantity
-        imageUrls: product.imageUrls,
+        imageUrls: updatedImageUrls,
         anyOffer: anyOffer,
       }
     })

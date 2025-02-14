@@ -49,6 +49,23 @@ async function listAllFulfillmentOrders() {
   }
 }
 
+async function cancelFulfillmentOrder(orderId) {
+  const client = await initSPClient()
+  try {
+    const response = await client.callAPI({
+      operation: 'cancelFulfillmentOrder',
+      endpoint: 'fulfillmentOutbound',
+      path: {
+        sellerFulfillmentOrderId: orderId,
+      },
+    })
+    return response
+  } catch (error) {
+    console.error('Error cancelling fulfillment order:', error)
+    throw error
+  }
+}
+
 async function createFulfillmentOrder(orderDetails) {
   const client = await initSPClient()
   try {
@@ -125,4 +142,5 @@ module.exports = {
   createFulfillmentOrder,
   getFulfillmentOrder,
   fetchTrackingDetails,
+  cancelFulfillmentOrder,
 }

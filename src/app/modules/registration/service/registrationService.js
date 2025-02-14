@@ -9,6 +9,7 @@ const registrationService = ({
   HTTP_ERRORS,
   ERRORS,
   configs,
+  queues,
 }) => ({
   checkIfExists: async (email) => {
     return await registrationRepository.checkIfExists(email)
@@ -47,6 +48,7 @@ const registrationService = ({
           id: account.id,
           email: account.email,
           firstName: account.firstName,
+          role: account.role,
         },
       }
       // const { otp, expiresAt } = this.generateOtp()
@@ -65,6 +67,24 @@ const registrationService = ({
     const expiresAt = new Date()
     expiresAt.setMinutes(expiresAt.getMinutes() + 10)
     return { otp, expiresAt }
+  },
+  send_query: async (name, email, message) => {
+    try {
+      const emailTitle = `New Contact Us Query`
+      const emailBody = `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+        <hr>
+        <p>This is an automated notification from your website's contact form.</p>
+      `
+      const adminEmail = configs.ADMIN_EMAIL
+      await queues.addEmailToQueue(adminEmail, emailTitle, emailBody)
+      return
+    } catch (error) {
+      throw error
+    }
   },
   loginToAccount: async function (email, password) {
     try {
@@ -112,6 +132,7 @@ const registrationService = ({
           id: account.id,
           email: account.email,
           firstName: account.firstName,
+          role: account.role,
         },
       }
     } catch (error) {
@@ -156,18 +177,55 @@ const registrationService = ({
           expiresIn: '10m',
         }
       )
-      const resetLink = `${configs.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${token}`
+      const resetLink = `${configs.FRONTEND_URL || 'http://localhost:8080/api/v1/user'}/reset-password?token=${token}`
       account.otpExpiresAt = Date.now()
       account.resetToken = token
       await account.save()
 
       //send the otp
-      const title = 'Reset-Password'
-      const body = `<p>Reset Your Password:</p>
-      <a href="${resetLink}" target="_blank">${resetLink}</a>
-      <p>This link will expire in 10 minutes.</p>`
-      await emailService.mailSender(email, title, body)
-      return account
+      const title = 'Reset Your Password'
+
+      const body = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; text-align: center;">
+          
+          <div style="padding-bottom: 20px;">
+            <img src=${configs.EMAIL_LOGO_URL} alt="Company Logo" style="max-width: 150px;">
+          </div>
+
+          <div style="background-color: #ffffff; padding: 20px; border-radius: 5px;">
+            <h2 style="color: #333;">🔑 Password Reset Request</h2>
+            <p style="font-size: 16px; color: #555;">We received a request to reset your password.</p>
+            <p style="font-size: 16px; color: #555;">Click the button below to set a new password:</p>
+
+            <div style="margin: 20px 0;">
+              <a href="${resetLink}" target="_blank"
+                style="background-color: #007bff; color: white; padding: 12px 20px; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 5px; display: inline-block;">
+                Reset Password
+              </a>
+            </div>
+
+            <p style="font-size: 14px; color: #777;">This link will expire in <strong>10 minutes</strong>.</p>
+            
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+            <p style="font-size: 14px; color: #777;">If you did not request a password reset, please ignore this email.</p>
+
+            <p style="font-size: 14px; color: #777;">
+              Need help? Contact us at 
+              <a href="mailto:customercare@saikouherbs.com" style="color: #007bff;">support@saikouherbs.com</a>
+            </p>
+          </div>
+
+          <p style="font-size: 12px; color: #aaa; text-align: center; margin-top: 20px;">
+            &copy; ${new Date().getFullYear()} YourCompany. All rights reserved.
+          </p>
+
+        </div>
+      `
+
+      await queues.addEmailToQueue(email, title, body)
+      // await emailService.mailSender(email, title, body)
+      return
       // return {
       //   token: token,
       //   account: {

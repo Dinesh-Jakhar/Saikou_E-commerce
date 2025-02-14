@@ -14,11 +14,12 @@ const product = createController(product_controller)
   .post('/addDiscount', 'addDiscount', {
     before: [
       authenticateJWT,
-      //authorize('admin'),
+      authorize('admin'),
       payloadValidationMiddleware(dto.addDiscount),
     ],
   })
-  .get('/:productId', 'getASingleProduct')
+  .get('/top', 'topProducts')
+  .get('/single/:productId', 'getASingleProduct')
   .post('/addNew', 'addNewProduct', {
     before: [
       authenticateJWT,

@@ -1,9 +1,19 @@
-module.exports = ({ productService, CustomError, configs }) => ({
+module.exports = ({ productService, CustomError }) => ({
   allProducts: async (req, res, next) => {
     try {
       const allProds = await productService.allProductsRoleWise()
       return res.status(200).json({
         products: allProds,
+      })
+    } catch (error) {
+      return next(error)
+    }
+  },
+  topProducts: async (req, res, next) => {
+    try {
+      const myProds = await productService.topProducts()
+      return res.status(200).json({
+        top_products: myProds,
       })
     } catch (error) {
       return next(error)
@@ -32,17 +42,15 @@ module.exports = ({ productService, CustomError, configs }) => ({
         fnSku,
         asin,
       } = req.body
-      // const mainImage = req.files?.mainImage?.[0];
-      // const descImages = req.files?.descImages || [];
       const all_files = req.body.files || {}
       const mainImageFile = all_files.mainImage?.[0] || null
       const descImageFiles = all_files.descImages || []
 
       const mainImagePath = mainImageFile
-        ? `${configs.SERVER_IMAGE_URL}/uploads/products/${mainImageFile}`
+        ? `/uploads/products/${mainImageFile}`
         : null
       const descImagePaths = descImageFiles.map(
-        (filename) => `${configs.SERVER_IMAGE_URL}/uploads/products/${filename}`
+        (filename) => `/uploads/products/${filename}`
       )
 
       const imageUrls = [mainImagePath, ...descImagePaths]
