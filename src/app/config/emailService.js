@@ -8,8 +8,8 @@ const createTransporter = () => {
 
   return nodemailer.createTransport({
     host: config.MAIL_HOST,
-    port: config.MAIL_PORT || 587,
-    secure: config.MAIL_SECURE === 'true',
+    port: config.MAIL_PORT,
+    secure: true,
     auth: {
       user: config.MAIL_USER,
       pass: config.MAIL_PASS,
@@ -17,8 +17,8 @@ const createTransporter = () => {
     tls: {
       rejectUnauthorized: false,
     },
-    // debug: true,
-    // logger: true
+    //  debug: true,
+    //  logger: true
   })
 }
 

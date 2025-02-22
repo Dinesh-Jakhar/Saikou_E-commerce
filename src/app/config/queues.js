@@ -231,9 +231,28 @@ const initializeWorkers = () => {
     try {
       const adminEmail = config.ADMIN_EMAIL
       const emailTitle = 'Order Creation Failed'
-      const emailBody = `<p>Order ID: <strong>${job.data.orderId}</strong> failed to be processed.</p>
-                           <p>Error Details:</p>
-                           <pre>${err.stack || err.message}</pre>`
+      let errorMessage = err.message || 'An unknown error occurred during order creation.';
+      let errorDetails = `
+        <p>We encountered an issue while processing Order ID: <strong>${job.data.orderId}</strong>.</p>
+        <p><strong>Error Details:</strong></p>
+        <p>${errorMessage}</p>
+      `;
+
+    // If there is a stack trace, include it for technical review (optional)
+    // if (err.stack) {
+    //   errorDetails += `
+    //     <p><strong>Stack Trace:</strong></p>
+    //     <pre>${err.stack}</pre>
+    //   `;
+    // }
+
+    // Construct the full email body
+    const emailBody = `
+      <p><strong>Order Creation Failed:</strong></p>
+      ${errorDetails}
+      <p>Please review the order details and take appropriate action. If you're unsure how to resolve the issue, please contact dev-support.</p>
+    `;
+
 
       await mailSender(adminEmail, emailTitle, emailBody)
       //await addEmailToQueue(adminEmail, emailTitle, emailBody);

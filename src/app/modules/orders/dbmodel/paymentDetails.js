@@ -75,6 +75,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: 'PaymentDetails',
       timestamps: true,
       paranoid: true,
+      underscored:true
     }
   )
 
